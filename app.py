@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = "sos-villageois-secret"
 CORS(app)
 
-# modele.init_db()
+modele.init_db()
 
 # * routes a venir :
 # auth : /inscription, /connexion, /deconnexion
