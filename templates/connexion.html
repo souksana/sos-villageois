@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>connexion - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/">&#8249;</a>
+        <h2>Connexion</h2>
+        <span>?</span>
+      </div>
+
+      <div class="nook-content padded">
+        <div class="nook-card">
+          <div class="nook-logo">
+            <img src="/static/img/Icons/Contacts.png" alt="connexion" />
+            <h1>se connecter</h1>
+          </div>
+
+          {% if erreur %}
+          <p class="erreur">{{ erreur }}</p>
+          {% endif %}
+
+          <form class="nook-form" method="POST" action="/connexion">
+            <div>
+              <label>email</label>
+              <input type="email" name="email" required />
+            </div>
+            <div>
+              <label>mot de passe</label>
+              <input type="password" name="mot_de_passe" required />
+            </div>
+            <button class="nook-btn" type="submit">entrer dans le village</button>
+          </form>
+
+          <p class="nook-link">pas encore de compte ? <a href="/inscription">s'inscrire</a></p>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>

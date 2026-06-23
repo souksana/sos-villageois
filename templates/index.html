@@ -2,11 +2,94 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body>
-    <h1>SOS Villageois</h1>
-    <p>bienvenue !</p>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        {% if session.pseudo %}
+        <a href="/deconnexion">CLOSE</a>
+        {% endif %}
+      </header>
+
+      {% if session.id_user %}
+      <div class="nook-content padded">
+        <div class="nook-card greeting-card">
+          <p class="greeting-hey">De retour au village,</p>
+          <p class="greeting-name">{{ session.pseudo | capitalize }} !</p>
+        </div>
+        <div class="nook-card dashboard-card">
+          <div class="icon-grid">
+            <a class="icon-btn" href="/annonces">
+              <div class="icon"><img src="/static/img/Icons/Notes.png" alt="annonces" /></div>
+              <span>Annonces</span>
+            </a>
+            <a class="icon-btn" href="/annonces/nouvelle">
+              <div class="icon"><img src="/static/img/Icons/Reminders.png" alt="poster" /></div>
+              <span>Poster</span>
+            </a>
+            <a class="icon-btn" href="/disponibilites">
+              <div class="icon"><img src="/static/img/Icons/Calendar.png" alt="dispos" /></div>
+              <span>Dispos</span>
+            </a>
+            <a class="icon-btn" href="/profil">
+              <div class="icon"><img src="/static/img/Icons/Contacts.png" alt="profil" /></div>
+              <span>Mon profil</span>
+            </a>
+            {% if session.role == "admin" %}
+            <a class="icon-btn" href="/admin">
+              <div class="icon"><img src="/static/img/Icons/Clock.png" alt="admin" /></div>
+              <span>Admin</span>
+            </a>
+            {% else %}
+            <a class="icon-btn" href="/interets">
+              <div class="icon"><img src="/static/img/Icons/Dating.png" alt="interets" /></div>
+              <span>Intérêts</span>
+            </a>
+            {% endif %}
+            <a class="icon-btn" href="/deconnexion">
+              <div class="icon"><img src="/static/img/Icons/Settings.png" alt="quitter" /></div>
+              <span>Quitter</span>
+            </a>
+            <a class="icon-btn" href="#">
+              <div class="icon"><img src="/static/img/Icons/Mail.png" alt="courrier" /></div>
+              <span>Courrier</span>
+            </a>
+            <a class="icon-btn" href="#">
+              <div class="icon"><img src="/static/img/Icons/Messages.png" alt="journal" /></div>
+              <span>Journal</span>
+            </a>
+            <a class="icon-btn" href="#">
+              <div class="icon"><img src="/static/img/Icons/Photos.png" alt="album" /></div>
+              <span>Album</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="landing-page">
+        <div class="landing-hero">
+          <img src="/static/img/logo.png" alt="logo" />
+          <h1>SOS Villageois</h1>
+          <p>Dépose une annonce, trouve un voisin disponible et rends la vie du village plus douce.</p>
+        </div>
+        <div class="landing-actions">
+          <a class="nook-btn" href="/connexion">Se connecter</a>
+          <a class="nook-btn-outline" href="/inscription">S'inscrire</a>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
   </body>
 </html>

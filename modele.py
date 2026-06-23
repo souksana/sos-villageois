@@ -1,4 +1,5 @@
 import mysql.connector
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_CONFIG = {
     "host": "localhost",
@@ -110,3 +111,80 @@ def init_db():
     conn.commit()
     cursor.close()
     conn.close()
+
+# * utilisateurs
+
+def add_user(pseudo, email, mot_de_passe, villageois_nom, villageois_photo):
+    conn = get_connection()
+    cursor = conn.cursor()
+    hashed = generate_password_hash(mot_de_passe)
+    cursor.execute(
+        "INSERT INTO Utilisateur (pseudo, email, mot_de_passe, villageois_nom, villageois_photo) VALUES (%s, %s, %s, %s, %s)",
+        (pseudo, email, hashed, villageois_nom, villageois_photo)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    cursor.close()
+    conn.close()
+    return get_user_by_id(new_id)
+
+def get_user_by_id(id_user):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM Utilisateur WHERE id_user = %s", (id_user,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result
+
+def get_user_by_email(email):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM Utilisateur WHERE email = %s", (email,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result
+
+def verifier_mdp(email, mot_de_passe):
+    user = get_user_by_email(email)
+    if user and check_password_hash(user["mot_de_passe"], mot_de_passe):
+        return user
+    return None
+
+def get_all_users():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id_user, pseudo, email, role, villageois_nom FROM Utilisateur ORDER BY id_user")
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
+
+def delete_user(id_user):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM Utilisateur WHERE id_user = %s", (id_user,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# * comptes de test
+def seed_users():
+    comptes = [
+        ("admin",    "admin@sos.fr",   "admin123",  "Tom Nook",  "", "admin"),
+        ("zio", "admin2@sos.fr",    "admin123",   "Follet",  "", "admin"),
+        ("souksana", "test@sos.fr",    "test123",   "Isabelle",  "", "user"),
+    ]
+    for pseudo, email, mdp, vnom, vphoto, role in comptes:
+        if not get_user_by_email(email):
+            conn = get_connection()
+            cursor = conn.cursor()
+            hashed = generate_password_hash(mdp)
+            cursor.execute(
+                "INSERT INTO Utilisateur (pseudo, email, mot_de_passe, villageois_nom, villageois_photo, role) VALUES (%s, %s, %s, %s, %s, %s)",
+                (pseudo, email, hashed, vnom, vphoto, role)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()

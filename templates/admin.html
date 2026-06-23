@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>admin - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/">&#8249;</a>
+        <h2>Admin</h2>
+        <span></span>
+      </div>
+
+      <div class="nook-content padded">
+        <div class="nook-card">
+
+          <p class="step-title">{{ users|length }} utilisateur(s)</p>
+
+          <div class="admin-user-list">
+            {% for u in users %}
+            <div class="admin-user-row">
+              <div class="admin-user-info">
+                <span class="admin-pseudo">{{ u.pseudo }}</span>
+                {% if u.role == "admin" %}
+                <span class="admin-badge">admin</span>
+                {% endif %}
+                <span class="admin-email">{{ u.email }}</span>
+              </div>
+              {% if u.role != "admin" %}
+              <form method="POST" action="/admin/supprimer/{{ u.id_user }}" onsubmit="return confirm('Supprimer {{ u.pseudo }} ?')">
+                <button class="admin-delete-btn" type="submit">&#10005;</button>
+              </form>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>

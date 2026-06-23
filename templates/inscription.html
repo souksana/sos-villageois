@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>inscription - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/">&#8249;</a>
+        <h2>Inscription</h2>
+        <span>?</span>
+      </div>
+
+      <div class="nook-content padded">
+        <div class="nook-card">
+          <div class="nook-logo">
+            <img src="/static/img/Icons/Photos.png" alt="inscription" />
+            <h1>rejoindre le village</h1>
+          </div>
+
+          {% if erreur %}
+          <p class="erreur">{{ erreur }}</p>
+          {% endif %}
+
+          <form class="nook-form" method="POST" action="/inscription">
+
+            <p class="step-title">1. choisis ton villageois</p>
+            <p id="chargement">chargement...</p>
+            <div class="grille-villageois" id="grille"></div>
+            <input type="hidden" name="villageois_nom" id="villageois_nom" />
+            <input type="hidden" name="villageois_photo" id="villageois_photo" />
+
+            <p class="step-title">2. tes infos</p>
+            <div>
+              <label>pseudo</label>
+              <input type="text" name="pseudo" required />
+            </div>
+            <div>
+              <label>email</label>
+              <input type="email" name="email" required />
+            </div>
+            <div>
+              <label>mot de passe</label>
+              <input type="password" name="mot_de_passe" id="mdp" required />
+            </div>
+            <div>
+              <label>confirmer le mot de passe</label>
+              <input type="password" name="confirm_mdp" id="confirm_mdp" required />
+            </div>
+            <p class="erreur" id="erreur-mdp" style="display:none">les mots de passe ne correspondent pas</p>
+
+            <button class="nook-btn" type="submit">créer mon compte</button>
+          </form>
+
+          <p class="nook-link">déjà un compte ? <a href="/connexion">se connecter</a></p>
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      document.querySelector(".nook-btn[type='submit']").addEventListener("click", (e) => {
+        const mdp = document.getElementById("mdp").value;
+        const confirm = document.getElementById("confirm_mdp").value;
+        const msg = document.getElementById("erreur-mdp");
+        if (mdp !== confirm) {
+          e.preventDefault();
+          msg.style.display = "block";
+        } else {
+          msg.style.display = "none";
+        }
+      });
+
+      fetch("/api/villageois")
+        .then(res => res.json())
+        .then(villageois => {
+          document.getElementById("chargement").remove();
+          const grille = document.getElementById("grille");
+          villageois.forEach(v => {
+            const carte = document.createElement("div");
+            carte.className = "carte-villageois";
+            const imgSrc = v.image_url || "/static/img/logo.png";
+            carte.innerHTML = `<img src="${imgSrc}" alt="${v.name}" onerror="this.src='/static/img/logo.png'" /><p>${v.name}</p>`;
+            carte.addEventListener("click", () => {
+              document.querySelectorAll(".carte-villageois").forEach(c => c.classList.remove("selectionne"));
+              carte.classList.add("selectionne");
+              document.getElementById("villageois_nom").value = v.name;
+              document.getElementById("villageois_photo").value = v.image_url;
+            });
+            grille.appendChild(carte);
+          });
+        })
+        .catch(() => {
+          document.getElementById("chargement").textContent = "impossible de charger les villageois";
+        });
+    </script>
+  </body>
+</html>
