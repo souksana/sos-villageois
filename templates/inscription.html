@@ -1,113 +1,220 @@
 <!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>inscription - SOS Villageois</title>
-    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
-    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
-    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="/static/css/style.css" />
-  </head>
-  <body>
-    <div id="app">
 
-      <header class="nook-header">
-        <div class="header-logo">
-          <img src="/static/img/logo.png" alt="logo" />
-          <span>SOS Villageois</span>
-        </div>
-        <a href="/">CLOSE</a>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>inscription - SOS Villageois</title>
+  <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+  <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+  <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
 
-      <div class="nook-subheader">
-        <a href="/">&#8249;</a>
-        <h2>Inscription</h2>
-        <span>?</span>
+<body>
+  <div id="app">
+
+    <header class="nook-header">
+      <div class="header-logo">
+        <img src="/static/img/logo.png" alt="logo" />
+        <span>SOS Villageois</span>
       </div>
+      <a href="/">CLOSE</a>
+    </header>
 
-      <div class="nook-content padded">
-        <div class="nook-card">
-          <div class="nook-logo">
-            <img src="/static/img/Icons/Photos.png" alt="inscription" />
-            <h1>rejoindre le village</h1>
-          </div>
-
-          {% if erreur %}
-          <p class="erreur">{{ erreur }}</p>
-          {% endif %}
-
-          <form class="nook-form" method="POST" action="/inscription">
-
-            <p class="step-title">1. choisis ton villageois</p>
-            <p id="chargement">chargement...</p>
-            <div class="grille-villageois" id="grille"></div>
-            <input type="hidden" name="villageois_nom" id="villageois_nom" />
-            <input type="hidden" name="villageois_photo" id="villageois_photo" />
-
-            <p class="step-title">2. tes infos</p>
-            <div>
-              <label>pseudo</label>
-              <input type="text" name="pseudo" required />
-            </div>
-            <div>
-              <label>email</label>
-              <input type="email" name="email" required />
-            </div>
-            <div>
-              <label>mot de passe</label>
-              <input type="password" name="mot_de_passe" id="mdp" required />
-            </div>
-            <div>
-              <label>confirmer le mot de passe</label>
-              <input type="password" name="confirm_mdp" id="confirm_mdp" required />
-            </div>
-            <p class="erreur" id="erreur-mdp" style="display:none">les mots de passe ne correspondent pas</p>
-
-            <button class="nook-btn" type="submit">créer mon compte</button>
-          </form>
-
-          <p class="nook-link">déjà un compte ? <a href="/connexion">se connecter</a></p>
-        </div>
-      </div>
-
+    <div class="nook-subheader">
+      <a href="/">&#8249;</a>
+      <h2>Inscription</h2>
+      <span>?</span>
     </div>
 
-    <script>
-      document.querySelector(".nook-btn[type='submit']").addEventListener("click", (e) => {
-        const mdp = document.getElementById("mdp").value;
-        const confirm = document.getElementById("confirm_mdp").value;
-        const msg = document.getElementById("erreur-mdp");
-        if (mdp !== confirm) {
-          e.preventDefault();
-          msg.style.display = "block";
-        } else {
-          msg.style.display = "none";
-        }
-      });
+    <div class="nook-content padded">
+      <div class="nook-card">
+        <div class="nook-logo">
+          <img src="/static/img/Icons/Photos.png" alt="inscription" />
+          <h1>rejoindre le village</h1>
+        </div>
 
-      fetch("/api/villageois")
-        .then(res => res.json())
-        .then(villageois => {
-          document.getElementById("chargement").remove();
-          const grille = document.getElementById("grille");
-          villageois.forEach(v => {
-            const carte = document.createElement("div");
-            carte.className = "carte-villageois";
-            const imgSrc = v.image_url || "/static/img/logo.png";
-            carte.innerHTML = `<img src="${imgSrc}" alt="${v.name}" onerror="this.src='/static/img/logo.png'" /><p>${v.name}</p>`;
-            carte.addEventListener("click", () => {
-              document.querySelectorAll(".carte-villageois").forEach(c => c.classList.remove("selectionne"));
-              carte.classList.add("selectionne");
-              document.getElementById("villageois_nom").value = v.name;
-              document.getElementById("villageois_photo").value = v.image_url;
-            });
-            grille.appendChild(carte);
-          });
-        })
-        .catch(() => {
-          document.getElementById("chargement").textContent = "impossible de charger les villageois";
+        {% if erreur %}
+        <p class="erreur">{{ erreur }}</p>
+        {% endif %}
+
+        <form class="nook-form" method="POST" action="/inscription">
+
+          <p class="step-title">1. choisis ton villageois</p>
+
+          <div class="villageois-filtres">
+            <input type="text" id="recherche-villageois" placeholder="&#128269; rechercher..." autocomplete="off" />
+            <select id="filtre-espece">
+              <option value="">toutes les espèces</option>
+            </select>
+          </div>
+
+          <p id="chargement">chargement...</p>
+          <div class="grille-wrapper">
+            <div class="grille-villageois" id="grille"></div>
+          </div>
+          <p id="aucun-resultat" style="display:none; text-align:center; color:#aaa; font-size:0.8em;">aucun villageois
+            trouvé</p>
+          <input type="hidden" name="villageois_nom" id="villageois_nom" />
+          <input type="hidden" name="villageois_photo" id="villageois_photo" />
+
+          <p class="step-title">2. tes infos</p>
+          <div>
+            <label>pseudo</label>
+            <input type="text" name="pseudo" required />
+          </div>
+          <div>
+            <label>email</label>
+            <input type="email" name="email" required />
+          </div>
+          <div>
+            <label>mot de passe</label>
+            <input type="password" name="mot_de_passe" id="mdp" required />
+          </div>
+          <div>
+            <label>confirmer le mot de passe</label>
+            <input type="password" name="confirm_mdp" id="confirm_mdp" required />
+          </div>
+          <p class="erreur" id="erreur-mdp" style="display:none">les mots de passe ne correspondent pas</p>
+
+          <button class="nook-btn" type="submit">créer mon compte</button>
+        </form>
+
+        <p class="nook-link">déjà un compte ? <a href="/connexion">se connecter</a></p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const ESPECES_FR = {
+      "alligator": "Alligator",
+      "anteater": "Fourmilier",
+      "bear": "Ours",
+      "bear cub": "Ourson",
+      "bird": "Oiseau",
+      "bull": "Taureau",
+      "cat": "Chat",
+      "chicken": "Poulet",
+      "cow": "Vache",
+      "cub": "Ourson",
+      "deer": "Cerf",
+      "dog": "Chien",
+      "duck": "Canard",
+      "eagle": "Aigle",
+      "elephant": "Éléphant",
+      "frog": "Grenouille",
+      "goat": "Chèvre",
+      "gorilla": "Gorille",
+      "hamster": "Hamster",
+      "hippo": "Hippopotame",
+      "horse": "Cheval",
+      "kangaroo": "Kangourou",
+      "koala": "Koala",
+      "lion": "Lion",
+      "monkey": "Singe",
+      "mouse": "Souris",
+      "octopus": "Pieuvre",
+      "ostrich": "Autruche",
+      "penguin": "Manchot",
+      "pig": "Cochon",
+      "rabbit": "Lapin",
+      "rhinoceros": "Rhinocéros",
+      "rhino": "Rhinocéros",
+      "sheep": "Mouton",
+      "squirrel": "Écureuil",
+      "tiger": "Tigre",
+      "wolf": "Loup"
+    };
+
+
+    document.querySelector(".nook-btn[type='submit']").addEventListener("click", (e) => {
+      const mdp = document.getElementById("mdp").value;
+      const confirm = document.getElementById("confirm_mdp").value;
+      const msg = document.getElementById("erreur-mdp");
+      if (mdp !== confirm) {
+        e.preventDefault();
+        msg.style.display = "block";
+      } else {
+        msg.style.display = "none";
+      }
+    });
+
+    const recherche = document.getElementById("recherche-villageois");
+    const filtreEspece = document.getElementById("filtre-espece");
+    const aucunResultat = document.getElementById("aucun-resultat");
+
+    function filtrer() {
+      const texte = recherche.value.toLowerCase().trim();
+      const espece = filtreEspece.value;
+      let visible = 0;
+      document.querySelectorAll(".carte-villageois").forEach(c => {
+        const nom = c.dataset.name.toLowerCase();
+        const sp = c.dataset.species;
+        const matchNom = !texte || nom.includes(texte);
+        const matchEspece = !espece || sp === espece;
+        c.style.display = matchNom && matchEspece ? "" : "none";
+        if (matchNom && matchEspece) visible++;
+      });
+      aucunResultat.style.display = visible === 0 ? "block" : "none";
+    }
+
+    recherche.addEventListener("input", filtrer);
+    filtreEspece.addEventListener("change", filtrer);
+
+    const grille = document.getElementById("grille");
+    const wrapper = grille.parentElement;
+
+    function updateGradients() {
+      const { scrollTop, scrollHeight, clientHeight } = grille;
+      wrapper.classList.toggle("can-scroll-up", scrollTop > 10);
+      wrapper.classList.toggle("can-scroll-down", scrollTop + clientHeight < scrollHeight - 10);
+    }
+
+    grille.addEventListener("scroll", updateGradients);
+
+    fetch("/api/villageois")
+      .then(res => res.json())
+      .then(villageois => {
+        document.getElementById("chargement").remove();
+
+        // collecter les espèces uniques et peupler le select
+        const especesEn = [...new Set(villageois.map(v => v.species).filter(Boolean))].sort();
+        especesEn.forEach(sp => {
+          const key = sp.toLowerCase();
+          const label = ESPECES_FR[key] || sp;
+          const opt = document.createElement("option");
+          opt.value = sp;
+          opt.textContent = label;
+          filtreEspece.appendChild(opt);
         });
-    </script>
-  </body>
+
+        // trier les options du select par ordre alphabétique français
+        const options = [...filtreEspece.options].slice(1);
+        options.sort((a, b) => a.textContent.localeCompare(b.textContent, "fr"));
+        options.forEach(opt => filtreEspece.appendChild(opt));
+        villageois.forEach(v => {
+          const carte = document.createElement("div");
+          carte.className = "carte-villageois";
+          carte.dataset.name = v.name;
+          carte.dataset.species = v.species || "";
+          const imgSrc = v.image_url || "/static/img/logo.png";
+          carte.innerHTML = `<img src="${imgSrc}" alt="${v.name}" onerror="this.src='/static/img/logo.png'" /><p>${v.name}</p>`;
+          carte.addEventListener("click", () => {
+            document.querySelectorAll(".carte-villageois").forEach(c => c.classList.remove("selectionne"));
+            carte.classList.add("selectionne");
+            document.getElementById("villageois_nom").value = v.name;
+            document.getElementById("villageois_photo").value = v.image_url;
+          });
+          grille.appendChild(carte);
+        });
+        updateGradients();
+      })
+      .catch(() => {
+        document.getElementById("chargement").textContent = "impossible de charger les villageois";
+      });
+  </script>
+</body>
+
 </html>

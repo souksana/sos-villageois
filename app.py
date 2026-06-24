@@ -10,7 +10,8 @@ CORS(app)
 modele.init_db()
 modele.seed_users()
 
-NOOKIPEDIA_KEY = "nookipedia-key"  # remplacer quand ya la clé (quand ils me rep...)
+NOOKIPEDIA_KEY = "dfe94752-dd22-4e96-85a0-eb7eb0804afa" 
+NOOKIPEDIA_VERSION = "1.0.0"
 
 # * liste de secours si aucune api dispo
 VILLAGEOIS_MOCK = [
@@ -23,17 +24,21 @@ VILLAGEOIS_MOCK = [
 # * villageois : nookipedia > acnhapi > mock local
 @app.route("/api/villageois")
 def api_villageois():
-    if NOOKIPEDIA_KEY != "votre-cle-ici":
+    if NOOKIPEDIA_KEY != "nookipedia-api-key":  # * si la clé est renseignée, on tente l'api nookipedia
         try:
             response = req.get(
                 "https://api.nookipedia.com/villagers",
-                headers={"X-API-Key": NOOKIPEDIA_KEY},
+                headers={"X-API-Key": NOOKIPEDIA_KEY, "Accept-Version": NOOKIPEDIA_VERSION},
                 params={"nhdetails": "true", "limit": "50"},
                 timeout=5
             )
             data = response.json()
             return jsonify([
-                {"name": v["name"], "image_url": v.get("nh_details", {}).get("photo_url", "")}
+                {
+                    "name": v["name"],
+                    "image_url": (v.get("nh_details") or {}).get("photo_url") or v.get("image_url", ""),
+                    "species": v.get("species", "")
+                }
                 for v in data
             ])
         except Exception:
@@ -43,13 +48,13 @@ def api_villageois():
         response = req.get("https://acnhapi.com/v1a/villagers", timeout=5)
         data = response.json()
         return jsonify([
-            {"name": v["name"]["name-USen"], "image_url": v["image_uri"]}
+            {"name": v["name"]["name-USen"], "image_url": v["image_uri"], "species": v.get("species", "")}
             for v in data[:50]
         ])
     except Exception:
-        # * si les deux apis sont down, liste locale
-        return jsonify([{"name": n, "image_url": ""} for n in VILLAGEOIS_MOCK])
+        return jsonify([{"name": n, "image_url": "", "species": ""} for n in VILLAGEOIS_MOCK])
 
+TACHES = ["jardinage", "bricolage", "courses", "cuisine", "informatique", "garde d'animaux", "déménagement", "autre"]
 # * accueil
 @app.route("/")
 def index():
@@ -94,6 +99,48 @@ def connexion():
             return redirect(url_for("index"))
         erreur = "email ou mot de passe incorrect"
     return render_template("connexion.html", erreur=erreur)
+
+# * annonces
+@app.route("/annonces")
+def annonces():
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    liste = modele.get_all_annonces()
+    return render_template("annonce/liste.html", annonces=liste)
+
+@app.route("/annonces/nouvelle", methods=["GET", "POST"])
+def nouvelle_annonce():
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    erreur = None
+    if request.method == "POST":
+        titre = request.form.get("titre", "").strip()
+        description = request.form.get("description", "").strip()
+        tache = request.form.get("tache")
+        if not titre or not tache:
+            erreur = "titre et type de tâche obligatoires"
+        else:
+            modele.add_annonce(titre, description, tache, session["id_user"])
+            return redirect(url_for("annonces"))
+    return render_template("annonce/nouvelle.html", taches=TACHES, erreur=erreur)
+
+@app.route("/annonces/<int:id_annonce>")
+def annonce_detail(id_annonce):
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    annonce = modele.get_annonce_by_id(id_annonce)
+    if not annonce:
+        return redirect(url_for("annonces"))
+    return render_template("annonce/detail.html", annonce=annonce)
+
+@app.route("/annonces/<int:id_annonce>/supprimer", methods=["POST"])
+def supprimer_annonce(id_annonce):
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    annonce = modele.get_annonce_by_id(id_annonce)
+    if annonce and (annonce["id_user"] == session["id_user"] or session.get("role") == "admin"):
+        modele.delete_annonce(id_annonce)
+    return redirect(url_for("annonces"))
 
 # * profil
 @app.route("/profil")

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nouvelle annonce - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/annonces">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/annonces">&#8249;</a>
+        <h2>Nouvelle annonce</h2>
+        <span></span>
+      </div>
+
+      <div class="nook-content padded">
+        <div class="nook-card">
+
+          <div class="nook-logo">
+            <img src="/static/img/Icons/Reminders.png" alt="poster" />
+            <h1>demander de l'aide</h1>
+          </div>
+
+          {% if erreur %}
+          <p class="erreur">{{ erreur }}</p>
+          {% endif %}
+
+          <form class="nook-form" method="POST" action="/annonces/nouvelle">
+            <div>
+              <label>titre *</label>
+              <input type="text" name="titre" placeholder="ex: besoin d'aide pour mon jardin" required />
+            </div>
+            <div>
+              <label>type de tâche *</label>
+              <select name="tache" required>
+                <option value="" disabled selected>choisir...</option>
+                {% for t in taches %}
+                <option value="{{ t }}">{{ t }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label>description</label>
+              <textarea name="description" rows="4" placeholder="décris ce dont tu as besoin..."></textarea>
+            </div>
+            <button class="nook-btn" type="submit">poster l'annonce</button>
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>

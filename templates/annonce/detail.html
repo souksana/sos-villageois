@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ annonce.titre }} - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/annonces">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/annonces">&#8249;</a>
+        <h2>Annonce</h2>
+        <span></span>
+      </div>
+
+      <div class="nook-content padded">
+        <div class="nook-card detail-card">
+
+          <div class="detail-header">
+            <img
+              class="detail-avatar"
+              src="{{ annonce.villageois_photo or '/static/img/logo.png' }}"
+              alt="{{ annonce.pseudo }}"
+              onerror="this.src='/static/img/logo.png'"
+            />
+            <div>
+              <p class="annonce-pseudo">{{ annonce.pseudo }}</p>
+              <p class="annonce-date">{{ annonce.date_creation.strftime('%d/%m/%Y') }}</p>
+            </div>
+            <span class="tache-badge" data-tache="{{ annonce.tache }}">{{ annonce.tache }}</span>
+          </div>
+
+          <h2 class="detail-titre">{{ annonce.titre }}</h2>
+
+          {% if annonce.description %}
+          <p class="detail-desc">{{ annonce.description }}</p>
+          {% endif %}
+
+          {% if session.id_user == annonce.id_user or session.role == "admin" %}
+          <form method="POST" action="/annonces/{{ annonce.id_annonce }}/supprimer" onsubmit="return confirm('Supprimer cette annonce ?')">
+            <button class="nook-btn delete-btn" type="submit">supprimer l'annonce</button>
+          </form>
+          {% endif %}
+
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>
