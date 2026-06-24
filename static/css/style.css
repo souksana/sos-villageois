@@ -892,6 +892,78 @@ body {
   border-color: #5dae8b;
 }
 
+/* * disponibilités */
+.dispo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dispo-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dispo-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.dispo-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dispo-date-badge {
+  font-family: "Rodin", sans-serif;
+  font-size: 0.7em;
+  font-weight: bold;
+  color: #5d4a30;
+  background: #f5e8c8;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.creneau-badge {
+  display: inline-block;
+  font-size: 0.65em;
+  font-family: "Rodin", sans-serif;
+  padding: 2px 9px;
+  border-radius: 20px;
+  color: #3d2b1f;
+  background: #e0e0e0;
+}
+
+.creneau-badge[data-creneau="matin"]            { background: #ffeea0; }
+.creneau-badge[data-creneau="après-midi"]       { background: #b8d8f0; }
+.creneau-badge[data-creneau="soir"]             { background: #d4b8f0; }
+.creneau-badge[data-creneau="journée entière"]  { background: #b8f0d0; }
+
+.dispo-desc {
+  font-size: 0.8em;
+  color: #888;
+  line-height: 1.5;
+}
+
+.dispo-delete-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1em;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.dispo-delete-btn:hover { color: #e08080; }
+
 /* * liste admin */
 .admin-user-list {
   display: flex;

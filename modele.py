@@ -290,6 +290,55 @@ def toggle_reaction(id_user, id_annonce, reaction_type):
     cursor.close()
     conn.close()
 
+def get_all_dispos():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT d.*, u.pseudo, u.villageois_photo
+        FROM Disponibilite d
+        JOIN Utilisateur u ON d.id_user = u.id_user
+        WHERE d.date_dispo >= CURDATE()
+        ORDER BY d.date_dispo ASC,
+            FIELD(d.creneau, 'matin', 'après-midi', 'soir', 'journée entière')
+    """)
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
+
+def get_dispo_by_id(id_dispo):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT d.*, u.pseudo, u.villageois_photo
+        FROM Disponibilite d
+        JOIN Utilisateur u ON d.id_user = u.id_user
+        WHERE d.id_dispo = %s
+    """, (id_dispo,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result
+
+def add_dispo(date_dispo, creneau, description, id_user):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO Disponibilite (date_dispo, creneau, description, id_user) VALUES (%s, %s, %s, %s)",
+        (date_dispo, creneau, description, id_user)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def delete_dispo(id_dispo):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM Disponibilite WHERE id_dispo = %s", (id_dispo,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 def get_all_users():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)

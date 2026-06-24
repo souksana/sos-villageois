@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from flask_cors import CORS
+from datetime import date
 import modele
 import requests as req
 
@@ -9,6 +10,12 @@ CORS(app)
 
 modele.init_db()
 modele.seed_users()
+
+@app.before_request
+def verifier_session():
+    id_user = session.get("id_user")
+    if id_user and not modele.get_user_by_id(id_user):
+        session.clear()
 
 NOOKIPEDIA_KEY = "dfe94752-dd22-4e96-85a0-eb7eb0804afa"
 NOOKIPEDIA_VERSION = "1.0.0"
@@ -175,6 +182,41 @@ def supprimer_annonce(id_annonce):
     if annonce and (annonce["id_user"] == session["id_user"] or session.get("role") == "admin"):
         modele.delete_annonce(id_annonce)
     return redirect(url_for("annonces"))
+
+CRENEAUX = ["matin", "après-midi", "soir", "journée entière"]
+
+# * disponibilités
+@app.route("/dispos")
+def dispos():
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    liste = modele.get_all_dispos()
+    return render_template("dispo/liste.html", dispos=liste)
+
+@app.route("/dispos/nouvelle", methods=["GET", "POST"])
+def nouvelle_dispo():
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    erreur = None
+    if request.method == "POST":
+        date_dispo = request.form.get("date_dispo")
+        creneau = request.form.get("creneau")
+        description = request.form.get("description", "").strip()
+        if not date_dispo or not creneau:
+            erreur = "date et créneau obligatoires"
+        else:
+            modele.add_dispo(date_dispo, creneau, description, session["id_user"])
+            return redirect(url_for("dispos"))
+    return render_template("dispo/nouvelle.html", creneaux=CRENEAUX, erreur=erreur, today=date.today().isoformat())
+
+@app.route("/dispos/<int:id_dispo>/supprimer", methods=["POST"])
+def supprimer_dispo(id_dispo):
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    dispo = modele.get_dispo_by_id(id_dispo)
+    if dispo and (dispo["id_user"] == session["id_user"] or session.get("role") == "admin"):
+        modele.delete_dispo(id_dispo)
+    return redirect(url_for("dispos"))
 
 # * profil
 @app.route("/profil")

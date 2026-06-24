@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nouvelle dispo - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/dispos">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/dispos">&#8249;</a>
+        <h2>Mes dispos</h2>
+        <span></span>
+      </div>
+
+      <div class="nook-content padded">
+        <div class="nook-card">
+
+          <div class="nook-logo">
+            <img src="/static/img/Icons/Calendar.png" alt="dispo" onerror="this.style.display='none'" />
+            <h1>je suis disponible</h1>
+          </div>
+
+          {% if erreur %}
+          <p class="erreur">{{ erreur }}</p>
+          {% endif %}
+
+          <form class="nook-form" method="POST" action="/dispos/nouvelle">
+            <div>
+              <label>date *</label>
+              <input type="date" name="date_dispo" min="{{ today }}" required />
+            </div>
+            <div>
+              <label>créneau *</label>
+              <select name="creneau" required>
+                <option value="" disabled selected>choisir...</option>
+                {% for c in creneaux %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label>pour quoi ? (optionnel)</label>
+              <textarea name="description" rows="3" placeholder="ex: je peux aider pour du jardinage ou des courses..."></textarea>
+            </div>
+            <button class="nook-btn" type="submit">partager ma dispo</button>
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>

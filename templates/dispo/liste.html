@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Disponibilités - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/">&#8249;</a>
+        <h2>Disponibilités</h2>
+        <a href="/dispos/nouvelle">+</a>
+      </div>
+
+      <div class="nook-content padded">
+        {% if dispos %}
+          {% for d in dispos %}
+          <div class="nook-card dispo-card">
+            <div class="dispo-top">
+              <img
+                class="mini-avatar"
+                src="{{ d.villageois_photo or '/static/img/logo.png' }}"
+                alt="{{ d.pseudo }}"
+                onerror="this.src='/static/img/logo.png'"
+              />
+              <div class="dispo-meta">
+                <span class="annonce-pseudo">{{ d.pseudo }}</span>
+                <div class="dispo-badges">
+                  <span class="dispo-date-badge">{{ d.date_dispo.strftime('%d/%m') }}</span>
+                  <span class="creneau-badge" data-creneau="{{ d.creneau }}">{{ d.creneau }}</span>
+                </div>
+              </div>
+              {% if session.id_user == d.id_user or session.role == "admin" %}
+              <form method="POST" action="/dispos/{{ d.id_dispo }}/supprimer" onsubmit="return confirm('Supprimer ce créneau ?')">
+                <button class="dispo-delete-btn" type="submit">✕</button>
+              </form>
+              {% endif %}
+            </div>
+            {% if d.description %}
+            <p class="dispo-desc">{{ d.description[:120] }}{% if d.description|length > 120 %}…{% endif %}</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="nook-card" style="text-align:center; padding:40px 20px;">
+            <p style="color:#aaa; font-size:0.9em;">personne n'a encore partagé ses dispos</p>
+            <a class="nook-btn" href="/dispos/nouvelle" style="margin-top:16px; display:block;">ajouter les miennes</a>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </body>
+</html>
