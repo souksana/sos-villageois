@@ -14,14 +14,6 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
-SET @@SESSION.SQL_LOG_BIN= 0;
-
---
--- GTID state at the beginning of the backup 
---
-
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '1420e6c6-5fe4-11f1-a7ab-cb5e7636a9ad:1-340';
 
 --
 -- Table structure for table `activite`
@@ -256,7 +248,6 @@ LOCK TABLES `utilisateur` WRITE;
 INSERT INTO `utilisateur` VALUES (1,'admin','admin@sos.fr','scrypt:32768:8:1$9WnKvQQv2SRlAaZp$bd611c858c318bef311aec849e5948ce4bc59b27e05709ee09f1fffca9688fe42f5b994adb3a898ce66963bc6a598b24bac7598e6c6e8d32faac35129d307f09','admin','Tom Nook',''),(2,'souksana','test@sos.fr','scrypt:32768:8:1$hQlQLNgMKGAe54T7$ccda04c75976f1163f0e99aaebd19b4959dd9653c5405e60bad92da56b0a21dc6f2d77afd30c8f5b7273624d5c38ad3177a343c988ad393aa27961ebb18a641a','user','Isabelle',''),(3,'zio','admin2@sos.fr','scrypt:32768:8:1$ZMxg5a8ypopAJwxW$08d4cd05c0ecdd494df241a6eb52e3c71ae7f4df39e840b1dc63a8035d5930dd85ac26d37e27737ed7d94a94922ced91495bf63f19e1c07ca1b3149814de4c66','admin','Follet',''),(4,'maud','maud@sos.fr','scrypt:32768:8:1$P7GszntRhUqFvvlp$43196e73cc9d6a3811210dacabacf38d80507b4d6518b8a4de05dcaec0458cbe9491e2420fdac37db25f88c4d411f9afea75c163261a18af4cb22027f6e90288','user','Marshal',''),(5,'prisca','prisca@sos.fr','scrypt:32768:8:1$yDEqit9k8WHReVIa$6e76d3c68e154ffc63bdf493ab995cbd2e0eb2305974d75f1b8cfc3e1cab21b2190cc616392c54fbba1adf20febfff6891389f6a68550fd91d65d17846a0d406','user','Raymond',''),(6,'Gu','gugulugugu@gmail.com','scrypt:32768:8:1$pWjhKyRRcLoXcCx9$391968113dc97086a3c9f2fea34200a2c67cfdfc7f9fe20c55e2f471740593acb0438fb02c4bf8bcdb5278c0daa3b3ab4464f24dcf85ae6f926924b80a2870cc','user','Admiral','https://dodo.ac/np/images/0/0a/Admiral%27s_Photo_NH_Texture.png'),(7,'juju','blabla@gmail.com','scrypt:32768:8:1$AJfcxDb39qvRkyDy$444f18bc75f2564a28e9c108867879edc48ef85d6fedfdc190d96dd67270a1c2a6c056d7f9a214d8a54408e4c0e761019ee6068bae3b779dddfa615d7137f74b','user','Alfonso','https://dodo.ac/np/images/e/e8/Alfonso%27s_Photo_NH_Texture.png'),(8,'yugyeomiste','fofof@gmail.com','scrypt:32768:8:1$CqTpkOUPldP8DvYP$15db2bfe3674152b8d52ae6b8fd0843ab134d17290610c54be8c3e3a07fe5deacc9adbe3a89f979b244a0ad1ff6c5f7462c7a8895800bf072536feec88f54e9f','user','Bunnie','https://dodo.ac/np/images/f/f9/Bunnie%27s_Photo_NH_Texture.png');
 /*!40000 ALTER TABLE `utilisateur` ENABLE KEYS */;
 UNLOCK TABLES;
-SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -267,4 +258,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-24 12:50:07
+-- Dump completed on 2026-06-24 12:51:54
