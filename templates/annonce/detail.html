@@ -56,6 +56,38 @@
           {% endif %}
 
         </div>
+
+        <div class="nook-card commentaires-section">
+          <h3 class="commentaires-titre">Commentaires {% if commentaires %}<span class="com-count">{{ commentaires|length }}</span>{% endif %}</h3>
+
+          {% if commentaires %}
+          <ul class="commentaires-liste">
+            {% for com in commentaires %}
+            <li class="commentaire">
+              <img
+                class="com-avatar"
+                src="{{ com.villageois_photo or '/static/img/logo.png' }}"
+                alt="{{ com.pseudo }}"
+                onerror="this.src='/static/img/logo.png'"
+              />
+              <div class="com-body">
+                <span class="com-pseudo">{{ com.pseudo }}</span>
+                <span class="com-date">{{ com.date_com.strftime('%d/%m/%Y') }}</span>
+                <p class="com-contenu">{{ com.contenu }}</p>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="com-vide">Aucun commentaire pour l'instant.</p>
+          {% endif %}
+
+          <form class="com-form" method="POST" action="/annonces/{{ annonce.id_annonce }}/commenter">
+            <textarea class="com-input" name="contenu" placeholder="Laisser un commentaire…" rows="3" required></textarea>
+            <button class="nook-btn" type="submit">envoyer</button>
+          </form>
+        </div>
+
       </div>
 
     </div>

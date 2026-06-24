@@ -204,6 +204,32 @@ def delete_annonce(id_annonce):
     cursor.close()
     conn.close()
 
+def get_commentaires_annonce(id_annonce):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT c.*, u.pseudo, u.villageois_photo
+        FROM Commentaire c
+        JOIN Utilisateur u ON c.id_user = u.id_user
+        WHERE c.id_annonce = %s
+        ORDER BY c.date_com ASC
+    """, (id_annonce,))
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
+
+def add_commentaire(contenu, id_user, id_annonce):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO Commentaire (contenu, id_user, id_annonce) VALUES (%s, %s, %s)",
+        (contenu, id_user, id_annonce)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 def get_all_users():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)

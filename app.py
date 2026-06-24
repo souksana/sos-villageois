@@ -131,7 +131,17 @@ def annonce_detail(id_annonce):
     annonce = modele.get_annonce_by_id(id_annonce)
     if not annonce:
         return redirect(url_for("annonces"))
-    return render_template("annonce/detail.html", annonce=annonce)
+    commentaires = modele.get_commentaires_annonce(id_annonce)
+    return render_template("annonce/detail.html", annonce=annonce, commentaires=commentaires)
+
+@app.route("/annonces/<int:id_annonce>/commenter", methods=["POST"])
+def commenter_annonce(id_annonce):
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    contenu = request.form.get("contenu", "").strip()
+    if contenu:
+        modele.add_commentaire(contenu, session["id_user"], id_annonce)
+    return redirect(url_for("annonce_detail", id_annonce=id_annonce))
 
 @app.route("/annonces/<int:id_annonce>/supprimer", methods=["POST"])
 def supprimer_annonce(id_annonce):
