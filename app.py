@@ -173,4 +173,4 @@ def admin_supprimer_user(id_user):
     return redirect(url_for("admin"))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)  # port 5001 : le 5000 est pris par AirPlay sur macOS
