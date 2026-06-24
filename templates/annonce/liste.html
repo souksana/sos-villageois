@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Annonces - SOS Villageois</title>
+    <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <header class="nook-header">
+        <div class="header-logo">
+          <img src="/static/img/logo.png" alt="logo" />
+          <span>SOS Villageois</span>
+        </div>
+        <a href="/">CLOSE</a>
+      </header>
+
+      <div class="nook-subheader">
+        <a href="/">&#8249;</a>
+        <h2>Annonces</h2>
+        <a href="/annonces/nouvelle">+</a>
+      </div>
+
+      <div class="nook-content padded">
+        {% if annonces %}
+          {% for a in annonces %}
+          <a class="annonce-card nook-card" href="/annonces/{{ a.id_annonce }}">
+            <div class="annonce-top">
+              <img
+                class="mini-avatar"
+                src="{{ a.villageois_photo or '/static/img/logo.png' }}"
+                alt="{{ a.pseudo }}"
+                onerror="this.src='/static/img/logo.png'"
+              />
+              <div class="annonce-meta">
+                <span class="annonce-pseudo">{{ a.pseudo }}</span>
+                <span class="tache-badge" data-tache="{{ a.tache }}">{{ a.tache }}</span>
+              </div>
+              <span class="annonce-date">{{ a.date_creation.strftime('%d/%m') }}</span>
+            </div>
+            <p class="annonce-titre">{{ a.titre }}</p>
+            {% if a.description %}
+            <p class="annonce-desc">{{ a.description[:100] }}{% if a.description|length > 100 %}…{% endif %}</p>
+            {% endif %}
+          </a>
+          {% endfor %}
+        {% else %}
+          <div class="nook-card" style="text-align:center; padding:40px 20px;">
+            <p style="color:#aaa; font-size:0.9em;">pas encore d'annonces dans le village</p>
+            <a class="nook-btn" href="/annonces/nouvelle" style="margin-top:16px; display:block;">poster la première</a>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </body>
+</html>

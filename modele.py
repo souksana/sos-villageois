@@ -151,6 +151,58 @@ def verifier_mdp(email, mot_de_passe):
     if user and check_password_hash(user["mot_de_passe"], mot_de_passe):
         return user
     return None
+    
+# * annonces
+
+def get_all_annonces():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT a.*, u.pseudo, u.villageois_photo
+        FROM Annonce a
+        JOIN Utilisateur u ON a.id_user = u.id_user
+        WHERE a.statut = 'ouverte'
+        ORDER BY a.date_creation DESC
+    """)
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
+
+def get_annonce_by_id(id_annonce):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT a.*, u.pseudo, u.villageois_photo
+        FROM Annonce a
+        JOIN Utilisateur u ON a.id_user = u.id_user
+        WHERE a.id_annonce = %s
+    """, (id_annonce,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result
+
+def add_annonce(titre, description, tache, id_user):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO Annonce (titre, description, tache, id_user) VALUES (%s, %s, %s, %s)",
+        (titre, description, tache, id_user)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    cursor.close()
+    conn.close()
+    return get_annonce_by_id(new_id)
+
+def delete_annonce(id_annonce):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM Annonce WHERE id_annonce = %s", (id_annonce,))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 def get_all_users():
     conn = get_connection()
