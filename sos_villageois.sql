@@ -1,7 +1,3 @@
-mysqldump: [Warning] Using a password on the command line interface can be insecure.
-Warning: A partial dump from a server that has GTIDs will by default include the GTIDs of all transactions, even those that changed suppressed parts of the database. If you don't want to restore GTIDs, pass --set-gtid-purged=OFF. To make a complete dump, pass --all-databases --triggers --routines --events. 
-Warning: A dump from a server that has GTIDs enabled will by default include the GTIDs of all transactions, even those that were executed during its extraction and might not be represented in the dumped data. This might result in an inconsistent data dump. 
-In order to ensure a consistent backup of the database, pass --single-transaction or --lock-all-tables or --source-data. 
 -- MySQL dump 10.13  Distrib 9.6.0, for macos14.8 (x86_64)
 --
 -- Host: localhost    Database: sos_villageois
@@ -25,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '1420e6c6-5fe4-11f1-a7ab-cb5e7636a9ad:1-103';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '1420e6c6-5fe4-11f1-a7ab-cb5e7636a9ad:1-320';
 
 --
 -- Table structure for table `activite`
@@ -99,7 +95,7 @@ CREATE TABLE `commentaire` (
   KEY `id_annonce` (`id_annonce`),
   CONSTRAINT `commentaire_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `utilisateur` (`id_user`) ON DELETE CASCADE,
   CONSTRAINT `commentaire_ibfk_2` FOREIGN KEY (`id_annonce`) REFERENCES `annonce` (`id_annonce`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -108,6 +104,7 @@ CREATE TABLE `commentaire` (
 
 LOCK TABLES `commentaire` WRITE;
 /*!40000 ALTER TABLE `commentaire` DISABLE KEYS */;
+INSERT INTO `commentaire` VALUES (1,'pas moi dsl','2026-06-24 12:08:02',8,8);
 /*!40000 ALTER TABLE `commentaire` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -202,17 +199,17 @@ LOCK TABLES `proposition` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `reagir`
+-- Table structure for table `Reagir`
 --
 
-DROP TABLE IF EXISTS `reagir`;
+DROP TABLE IF EXISTS `Reagir`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `reagir` (
+CREATE TABLE `Reagir` (
   `id_user` int NOT NULL,
   `id_annonce` int NOT NULL,
   `type` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
-  PRIMARY KEY (`id_user`,`id_annonce`),
+  PRIMARY KEY (`id_user`,`id_annonce`,`type`),
   KEY `id_annonce` (`id_annonce`),
   CONSTRAINT `reagir_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `utilisateur` (`id_user`) ON DELETE CASCADE,
   CONSTRAINT `reagir_ibfk_2` FOREIGN KEY (`id_annonce`) REFERENCES `annonce` (`id_annonce`) ON DELETE CASCADE
@@ -220,12 +217,13 @@ CREATE TABLE `reagir` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `reagir`
+-- Dumping data for table `Reagir`
 --
 
-LOCK TABLES `reagir` WRITE;
-/*!40000 ALTER TABLE `reagir` DISABLE KEYS */;
-/*!40000 ALTER TABLE `reagir` ENABLE KEYS */;
+LOCK TABLES `Reagir` WRITE;
+/*!40000 ALTER TABLE `Reagir` DISABLE KEYS */;
+INSERT INTO `Reagir` VALUES (8,5,'urgence'),(1,8,'coeur'),(1,8,'rire'),(1,8,'urgence'),(8,8,'coeur'),(8,8,'pouce'),(8,8,'rire'),(8,8,'urgence');
+/*!40000 ALTER TABLE `Reagir` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -269,4 +267,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-24 11:46:03
+-- Dump completed on 2026-06-24 12:29:53

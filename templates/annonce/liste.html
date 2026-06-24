@@ -26,6 +26,12 @@
         <a href="/annonces/nouvelle">+</a>
       </div>
 
+      <div class="filtre-bar">
+        <a href="/annonces?tri=recent" class="filtre-pill {% if tri == 'recent' %}active{% endif %}">récent</a>
+        <a href="/annonces?tri=ancien" class="filtre-pill {% if tri == 'ancien' %}active{% endif %}">ancien</a>
+        <a href="/annonces?tri=urgence" class="filtre-pill urgence {% if tri == 'urgence' %}active{% endif %}">! urgence</a>
+      </div>
+
       <div class="nook-content padded">
         {% if annonces %}
           {% for a in annonces %}
@@ -41,11 +47,23 @@
                 <span class="annonce-pseudo">{{ a.pseudo }}</span>
                 <span class="tache-badge" data-tache="{{ a.tache }}">{{ a.tache }}</span>
               </div>
-              <span class="annonce-date">{{ a.date_creation.strftime('%d/%m') }}</span>
+              <div class="annonce-top-right">
+                {% if a.urgence_count > 0 %}
+                <span class="urgence-badge">! {{ a.urgence_count }}</span>
+                {% endif %}
+                <span class="annonce-date">{{ a.date_creation.strftime('%d/%m') }}</span>
+              </div>
             </div>
             <p class="annonce-titre">{{ a.titre }}</p>
             {% if a.description %}
             <p class="annonce-desc">{{ a.description[:100] }}{% if a.description|length > 100 %}…{% endif %}</p>
+            {% endif %}
+            {% if a.urgence_count > 0 or a.coeur_count > 0 or a.rire_count > 0 %}
+            <div class="card-reactions">
+              {% if a.urgence_count > 0 %}<span class="card-reac urgence">! {{ a.urgence_count }}</span>{% endif %}
+              {% if a.coeur_count > 0 %}<span class="card-reac">♥ {{ a.coeur_count }}</span>{% endif %}
+              {% if a.rire_count > 0 %}<span class="card-reac">😹 {{ a.rire_count }}</span>{% endif %}
+            </div>
             {% endif %}
           </a>
           {% endfor %}

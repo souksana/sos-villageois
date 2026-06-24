@@ -75,11 +75,16 @@ def init_db():
             id_user INT NOT NULL,
             id_annonce INT NOT NULL,
             type VARCHAR(20) NOT NULL,
-            PRIMARY KEY (id_user, id_annonce),
+            PRIMARY KEY (id_user, id_annonce, type),
             FOREIGN KEY (id_user) REFERENCES Utilisateur(id_user) ON DELETE CASCADE,
             FOREIGN KEY (id_annonce) REFERENCES Annonce(id_annonce) ON DELETE CASCADE
         )
     """)
+    try:
+        cursor.execute("ALTER TABLE Reagir DROP PRIMARY KEY, ADD PRIMARY KEY (id_user, id_annonce, type)")
+        conn.commit()
+    except:
+        pass
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS Interet (
@@ -154,15 +159,25 @@ def verifier_mdp(email, mot_de_passe):
     
 # * annonces
 
-def get_all_annonces():
+def get_all_annonces(tri='recent'):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT a.*, u.pseudo, u.villageois_photo
+    order = {
+        'ancien': 'a.date_creation ASC',
+        'urgence': 'urgence_count DESC, a.date_creation DESC',
+    }.get(tri, 'a.date_creation DESC')
+    cursor.execute(f"""
+        SELECT a.*, u.pseudo, u.villageois_photo,
+          COALESCE(r_u.cnt, 0) AS urgence_count,
+          COALESCE(r_c.cnt, 0) AS coeur_count,
+          COALESCE(r_r.cnt, 0) AS rire_count
         FROM Annonce a
         JOIN Utilisateur u ON a.id_user = u.id_user
+        LEFT JOIN (SELECT id_annonce, COUNT(*) AS cnt FROM Reagir WHERE type='urgence' GROUP BY id_annonce) r_u ON r_u.id_annonce = a.id_annonce
+        LEFT JOIN (SELECT id_annonce, COUNT(*) AS cnt FROM Reagir WHERE type='coeur' GROUP BY id_annonce) r_c ON r_c.id_annonce = a.id_annonce
+        LEFT JOIN (SELECT id_annonce, COUNT(*) AS cnt FROM Reagir WHERE type='rire' GROUP BY id_annonce) r_r ON r_r.id_annonce = a.id_annonce
         WHERE a.statut = 'ouverte'
-        ORDER BY a.date_creation DESC
+        ORDER BY {order}
     """)
     result = cursor.fetchall()
     cursor.close()
@@ -226,6 +241,51 @@ def add_commentaire(contenu, id_user, id_annonce):
         "INSERT INTO Commentaire (contenu, id_user, id_annonce) VALUES (%s, %s, %s)",
         (contenu, id_user, id_annonce)
     )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def get_reactions_annonce(id_annonce):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT type, COUNT(*) AS count FROM Reagir WHERE id_annonce = %s GROUP BY type",
+        (id_annonce,)
+    )
+    result = {row['type']: row['count'] for row in cursor.fetchall()}
+    cursor.close()
+    conn.close()
+    return result
+
+def get_user_reactions(id_user, id_annonce):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT type FROM Reagir WHERE id_user = %s AND id_annonce = %s",
+        (id_user, id_annonce)
+    )
+    result = {row[0] for row in cursor.fetchall()}
+    cursor.close()
+    conn.close()
+    return result
+
+def toggle_reaction(id_user, id_annonce, reaction_type):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT 1 FROM Reagir WHERE id_user=%s AND id_annonce=%s AND type=%s",
+        (id_user, id_annonce, reaction_type)
+    )
+    if cursor.fetchone():
+        cursor.execute(
+            "DELETE FROM Reagir WHERE id_user=%s AND id_annonce=%s AND type=%s",
+            (id_user, id_annonce, reaction_type)
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO Reagir (id_user, id_annonce, type) VALUES (%s, %s, %s)",
+            (id_user, id_annonce, reaction_type)
+        )
     conn.commit()
     cursor.close()
     conn.close()

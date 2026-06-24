@@ -57,6 +57,22 @@
 
         </div>
 
+        <div class="nook-card reactions-section">
+          <div class="reactions-bar">
+            {% for type_key, label in reaction_types %}
+            <form method="POST" action="/annonces/{{ annonce.id_annonce }}/reagir">
+              <input type="hidden" name="type" value="{{ type_key }}">
+              <button class="reaction-btn {% if type_key == 'urgence' %}reaction-urgence{% endif %} {% if type_key in user_reactions %}active{% endif %}" type="submit">
+                {{ label }}
+                {% if reactions.get(type_key, 0) > 0 %}
+                <span class="reaction-count">{{ reactions.get(type_key) }}</span>
+                {% endif %}
+              </button>
+            </form>
+            {% endfor %}
+          </div>
+        </div>
+
         <div class="nook-card commentaires-section">
           <h3 class="commentaires-titre">Commentaires {% if commentaires %}<span class="com-count">{{ commentaires|length }}</span>{% endif %}</h3>
 

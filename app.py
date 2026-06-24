@@ -10,8 +10,11 @@ CORS(app)
 modele.init_db()
 modele.seed_users()
 
-NOOKIPEDIA_KEY = "dfe94752-dd22-4e96-85a0-eb7eb0804afa" 
+NOOKIPEDIA_KEY = "dfe94752-dd22-4e96-85a0-eb7eb0804afa"
 NOOKIPEDIA_VERSION = "1.0.0"
+
+REACTION_TYPES = [('urgence', '‼️'), ('coeur', '💚'), ('rire', '😹')]
+VALID_REACTION_TYPES = {t for t, _ in REACTION_TYPES}
 
 # * liste de secours si aucune api dispo
 VILLAGEOIS_MOCK = [
@@ -105,8 +108,11 @@ def connexion():
 def annonces():
     if not session.get("id_user"):
         return redirect(url_for("connexion"))
-    liste = modele.get_all_annonces()
-    return render_template("annonce/liste.html", annonces=liste)
+    tri = request.args.get("tri", "recent")
+    if tri not in ('recent', 'ancien', 'urgence'):
+        tri = 'recent'
+    liste = modele.get_all_annonces(tri)
+    return render_template("annonce/liste.html", annonces=liste, tri=tri)
 
 @app.route("/annonces/nouvelle", methods=["GET", "POST"])
 def nouvelle_annonce():
@@ -132,7 +138,25 @@ def annonce_detail(id_annonce):
     if not annonce:
         return redirect(url_for("annonces"))
     commentaires = modele.get_commentaires_annonce(id_annonce)
-    return render_template("annonce/detail.html", annonce=annonce, commentaires=commentaires)
+    reactions = modele.get_reactions_annonce(id_annonce)
+    user_reactions = modele.get_user_reactions(session["id_user"], id_annonce)
+    return render_template(
+        "annonce/detail.html",
+        annonce=annonce,
+        commentaires=commentaires,
+        reactions=reactions,
+        user_reactions=user_reactions,
+        reaction_types=REACTION_TYPES
+    )
+
+@app.route("/annonces/<int:id_annonce>/reagir", methods=["POST"])
+def reagir_annonce(id_annonce):
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    reaction_type = request.form.get("type")
+    if reaction_type in VALID_REACTION_TYPES:
+        modele.toggle_reaction(session["id_user"], id_annonce, reaction_type)
+    return redirect(url_for("annonce_detail", id_annonce=id_annonce))
 
 @app.route("/annonces/<int:id_annonce>/commenter", methods=["POST"])
 def commenter_annonce(id_annonce):
