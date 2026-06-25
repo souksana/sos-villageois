@@ -1,0 +1,298 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SOS Villageois API",
+    "description": "API du réseau d'entraide SOS Villageois — thème Animal Crossing",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "http://localhost:5000", "description": "Serveur local" }
+  ],
+  "tags": [
+    { "name": "Villageois", "description": "Données Animal Crossing via Nookipedia" },
+    { "name": "Auth", "description": "Inscription et connexion" },
+    { "name": "Annonces", "description": "Demandes d'aide entre voisins" },
+    { "name": "Disponibilités", "description": "Créneaux proposés par les villageois" }
+  ],
+  "paths": {
+    "/api/villageois": {
+      "get": {
+        "tags": ["Villageois"],
+        "summary": "Liste des villageois Animal Crossing",
+        "description": "Fallback en cascade : Nookipedia API → acnhapi.com → liste mock locale",
+        "responses": {
+          "200": {
+            "description": "Liste des villageois",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Villageois" }
+                },
+                "example": [
+                  { "name": "Raymond", "image_url": "https://dodo.ac/np/images/raymond.png", "species": "Cat" },
+                  { "name": "Ankha",   "image_url": "https://dodo.ac/np/images/ankha.png",   "species": "Cat" },
+                  { "name": "Marshal", "image_url": "https://dodo.ac/np/images/marshal.png", "species": "Squirrel" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inscription": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Formulaire d'inscription",
+        "responses": { "200": { "description": "Page HTML du formulaire" } }
+      },
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Créer un compte",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["pseudo", "email", "mot_de_passe", "confirm_mdp"],
+                "properties": {
+                  "pseudo":           { "type": "string",  "example": "souksana" },
+                  "email":            { "type": "string",  "format": "email", "example": "souksana@mail.fr" },
+                  "mot_de_passe":     { "type": "string",  "format": "password" },
+                  "confirm_mdp":      { "type": "string",  "format": "password" },
+                  "villageois_nom":   { "type": "string",  "example": "Raymond" },
+                  "villageois_photo": { "type": "string",  "example": "https://dodo.ac/np/images/raymond.png" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": { "description": "Redirige vers / si succès, ou affiche une erreur" }
+        }
+      }
+    },
+    "/connexion": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Formulaire de connexion",
+        "responses": { "200": { "description": "Page HTML du formulaire" } }
+      },
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Se connecter",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "mot_de_passe"],
+                "properties": {
+                  "email":        { "type": "string", "format": "email", "example": "test@sos.fr" },
+                  "mot_de_passe": { "type": "string", "format": "password", "example": "test123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": { "description": "Redirige vers / si succès" }
+        }
+      }
+    },
+    "/deconnexion": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Se déconnecter (vide la session)",
+        "responses": { "302": { "description": "Redirige vers /connexion" } }
+      }
+    },
+    "/annonces": {
+      "get": {
+        "tags": ["Annonces"],
+        "summary": "Liste des annonces ouvertes",
+        "description": "Nécessite d'être connecté. Tri possible via paramètre `tri`.",
+        "parameters": [
+          {
+            "name": "tri",
+            "in": "query",
+            "description": "Ordre de tri des annonces",
+            "schema": { "type": "string", "enum": ["recent", "ancien", "urgence"], "default": "recent" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Page HTML avec la liste des annonces" },
+          "302": { "description": "Redirige vers /connexion si non connecté" }
+        }
+      }
+    },
+    "/annonces/nouvelle": {
+      "get": {
+        "tags": ["Annonces"],
+        "summary": "Formulaire de création d'annonce",
+        "responses": { "200": { "description": "Page HTML du formulaire" } }
+      },
+      "post": {
+        "tags": ["Annonces"],
+        "summary": "Créer une annonce",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["titre", "tache"],
+                "properties": {
+                  "titre":       { "type": "string", "example": "besoin d'aide pour mon jardin" },
+                  "tache":       { "type": "string", "enum": ["jardinage","bricolage","courses","cuisine","informatique","garde d'animaux","déménagement","autre"] },
+                  "description": { "type": "string", "example": "j'ai besoin d'aide pour tailler mes haies samedi matin" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "302": { "description": "Redirige vers /annonces après création" } }
+      }
+    },
+    "/annonces/{id_annonce}": {
+      "get": {
+        "tags": ["Annonces"],
+        "summary": "Détail d'une annonce",
+        "description": "Affiche l'annonce, ses commentaires et ses réactions",
+        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": { "description": "Page HTML du détail" },
+          "302": { "description": "Redirige vers /annonces si l'annonce n'existe pas" }
+        }
+      }
+    },
+    "/annonces/{id_annonce}/reagir": {
+      "post": {
+        "tags": ["Annonces"],
+        "summary": "Ajouter ou retirer une réaction",
+        "description": "Toggle : si la réaction existe déjà, elle est supprimée",
+        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": { "type": "string", "enum": ["urgence", "coeur", "rire"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "302": { "description": "Redirige vers le détail de l'annonce" } }
+      }
+    },
+    "/annonces/{id_annonce}/commenter": {
+      "post": {
+        "tags": ["Annonces"],
+        "summary": "Poster un commentaire",
+        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["contenu"],
+                "properties": {
+                  "contenu": { "type": "string", "example": "je peux t'aider samedi !" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "302": { "description": "Redirige vers le détail de l'annonce" } }
+      }
+    },
+    "/annonces/{id_annonce}/supprimer": {
+      "post": {
+        "tags": ["Annonces"],
+        "summary": "Supprimer une annonce",
+        "description": "Autorisé uniquement pour l'auteur de l'annonce ou un admin",
+        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "302": { "description": "Redirige vers /annonces" } }
+      }
+    },
+    "/dispos": {
+      "get": {
+        "tags": ["Disponibilités"],
+        "summary": "Liste des disponibilités à venir",
+        "description": "Filtrées à partir d'aujourd'hui, triées par date puis créneau",
+        "responses": { "200": { "description": "Page HTML" } }
+      }
+    },
+    "/dispos/nouvelle": {
+      "get": {
+        "tags": ["Disponibilités"],
+        "summary": "Formulaire de déclaration de disponibilité",
+        "responses": { "200": { "description": "Page HTML du formulaire" } }
+      },
+      "post": {
+        "tags": ["Disponibilités"],
+        "summary": "Déclarer une disponibilité",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["date_dispo", "creneau"],
+                "properties": {
+                  "date_dispo":  { "type": "string", "format": "date", "example": "2026-06-28" },
+                  "creneau":     { "type": "string", "enum": ["matin", "après-midi", "soir", "journée entière"] },
+                  "description": { "type": "string", "example": "disponible pour jardinage ou courses" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "302": { "description": "Redirige vers /dispos" } }
+      }
+    },
+    "/dispos/{id_dispo}": {
+      "get": {
+        "tags": ["Disponibilités"],
+        "summary": "Détail d'une disponibilité",
+        "description": "Le propriétaire voit la liste des villageois intéressés",
+        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Page HTML du détail" } }
+      }
+    },
+    "/dispos/{id_dispo}/interesse": {
+      "post": {
+        "tags": ["Disponibilités"],
+        "summary": "Exprimer ou retirer son intérêt",
+        "description": "Toggle — impossible de s'inscrire sur sa propre disponibilité",
+        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "302": { "description": "Redirige vers la page précédente" } }
+      }
+    },
+    "/dispos/{id_dispo}/supprimer": {
+      "post": {
+        "tags": ["Disponibilités"],
+        "summary": "Supprimer une disponibilité",
+        "description": "Autorisé uniquement pour l'auteur ou un admin",
+        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "302": { "description": "Redirige vers /dispos" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Villageois": {
+        "type": "object",
+        "properties": {
+          "name":      { "type": "string", "example": "Raymond" },
+          "image_url": { "type": "string", "example": "https://dodo.ac/np/images/raymond.png" },
+          "species":   { "type": "string", "example": "Cat" }
+        }
+      }
+    }
+  }
+}
