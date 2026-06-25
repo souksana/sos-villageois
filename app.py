@@ -23,7 +23,7 @@ NOOKIPEDIA_VERSION = "1.0.0"
 REACTION_TYPES = [('urgence', '‼️'), ('coeur', '💚'), ('rire', '😹')]
 VALID_REACTION_TYPES = {t for t, _ in REACTION_TYPES}
 
-# * liste de secours si aucune api dispo
+# * liste de secours si API down
 VILLAGEOIS_MOCK = [
     "Marshal", "Raymond", "Ankha", "Diana", "Fauna", "Audie", "Judy",
     "Zucker", "Stitches", "Bob", "Goldie", "Dom", "Sherb", "Merengue",
@@ -65,6 +65,7 @@ def api_villageois():
         return jsonify([{"name": n, "image_url": "", "species": ""} for n in VILLAGEOIS_MOCK])
 
 TACHES = ["jardinage", "bricolage", "courses", "cuisine", "informatique", "garde d'animaux", "déménagement", "autre"]
+
 # * accueil
 @app.route("/")
 def index():
@@ -265,7 +266,7 @@ def admin():
 def admin_supprimer_user(id_user):
     if session.get("role") != "admin":
         return redirect(url_for("index"))
-    if id_user != session.get("id_user"):  # * on peut pas se supprimer soi-meme
+    if id_user != session.get("id_user"):  # * on peut pas se supprimer soi-meme :p
         modele.delete_user(id_user)
     return redirect(url_for("admin"))
 
