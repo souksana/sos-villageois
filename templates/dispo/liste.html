@@ -50,9 +50,30 @@
               </form>
               {% endif %}
             </div>
+
             {% if d.description %}
             <p class="dispo-desc">{{ d.description[:120] }}{% if d.description|length > 120 %}…{% endif %}</p>
             {% endif %}
+
+            <div class="dispo-footer">
+              {% if d.interet_count > 0 %}
+              <span class="interet-count">{{ d.interet_count }} intéressé{{ 's' if d.interet_count > 1 }}</span>
+              {% endif %}
+
+              {% if session.id_user != d.id_user %}
+                {% if d.id_dispo in mes_interets %}
+                <form method="POST" action="/dispos/{{ d.id_dispo }}/interesse">
+                  <button class="interesse-btn active" type="submit">✓ je suis dispo !</button>
+                </form>
+                {% else %}
+                <form method="POST" action="/dispos/{{ d.id_dispo }}/interesse">
+                  <button class="interesse-btn" type="submit">je suis intéressé(e)</button>
+                </form>
+                {% endif %}
+              {% elif d.interet_count > 0 %}
+              <a class="interesse-btn active" href="/dispos/{{ d.id_dispo }}">voir les {{ d.interet_count }} intéressé{{ 's' if d.interet_count > 1 }} →</a>
+              {% endif %}
+            </div>
           </div>
           {% endfor %}
         {% else %}

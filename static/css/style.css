@@ -964,6 +964,62 @@ body {
 
 .dispo-delete-btn:hover { color: #e08080; }
 
+.dispo-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.interet-count {
+  font-size: 0.72em;
+  color: #aaa;
+  font-family: "Rodin", sans-serif;
+}
+
+.interesse-btn {
+  font-family: "Rodin", sans-serif;
+  font-size: 0.75em;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 2px solid #7bc9a4;
+  background: transparent;
+  color: #5dae8b;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.interesse-btn:hover {
+  background: #eaf8f2;
+}
+
+.interesse-btn.active {
+  background: #7bc9a4;
+  color: white;
+}
+
+.interesse-btn.active:hover {
+  background: #5dae8b;
+}
+
+.interets-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.interet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* * liste admin */
 .admin-user-list {
   display: flex;

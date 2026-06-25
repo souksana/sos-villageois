@@ -294,10 +294,13 @@ def get_all_dispos():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT d.*, u.pseudo, u.villageois_photo
+        SELECT d.*, u.pseudo, u.villageois_photo,
+            COUNT(i.id_user) AS interet_count
         FROM Disponibilite d
         JOIN Utilisateur u ON d.id_user = u.id_user
+        LEFT JOIN Interet i ON i.id_dispo = d.id_dispo
         WHERE d.date_dispo >= CURDATE()
+        GROUP BY d.id_dispo
         ORDER BY d.date_dispo ASC,
             FIELD(d.creneau, 'matin', 'après-midi', 'soir', 'journée entière')
     """)
@@ -338,6 +341,42 @@ def delete_dispo(id_dispo):
     conn.commit()
     cursor.close()
     conn.close()
+
+def toggle_interet(id_user, id_dispo):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM Interet WHERE id_user=%s AND id_dispo=%s", (id_user, id_dispo))
+    if cursor.fetchone():
+        cursor.execute("DELETE FROM Interet WHERE id_user=%s AND id_dispo=%s", (id_user, id_dispo))
+    else:
+        cursor.execute("INSERT INTO Interet (id_user, id_dispo) VALUES (%s, %s)", (id_user, id_dispo))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def get_interets_dispo(id_dispo):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT i.*, u.pseudo, u.villageois_photo
+        FROM Interet i
+        JOIN Utilisateur u ON i.id_user = u.id_user
+        WHERE i.id_dispo = %s
+        ORDER BY i.date_interet ASC
+    """, (id_dispo,))
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
+
+def get_user_interets(id_user):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_dispo FROM Interet WHERE id_user=%s", (id_user,))
+    result = {row[0] for row in cursor.fetchall()}
+    cursor.close()
+    conn.close()
+    return result
 
 def get_all_users():
     conn = get_connection()

@@ -191,7 +191,28 @@ def dispos():
     if not session.get("id_user"):
         return redirect(url_for("connexion"))
     liste = modele.get_all_dispos()
-    return render_template("dispo/liste.html", dispos=liste)
+    mes_interets = modele.get_user_interets(session["id_user"])
+    return render_template("dispo/liste.html", dispos=liste, mes_interets=mes_interets)
+
+@app.route("/dispos/<int:id_dispo>")
+def dispo_detail(id_dispo):
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    dispo = modele.get_dispo_by_id(id_dispo)
+    if not dispo:
+        return redirect(url_for("dispos"))
+    interets = modele.get_interets_dispo(id_dispo)
+    user_interesse = session["id_user"] in {i["id_user"] for i in interets}
+    return render_template("dispo/detail.html", dispo=dispo, interets=interets, user_interesse=user_interesse)
+
+@app.route("/dispos/<int:id_dispo>/interesse", methods=["POST"])
+def interesse_dispo(id_dispo):
+    if not session.get("id_user"):
+        return redirect(url_for("connexion"))
+    dispo = modele.get_dispo_by_id(id_dispo)
+    if dispo and dispo["id_user"] != session["id_user"]:
+        modele.toggle_interet(session["id_user"], id_dispo)
+    return redirect(request.referrer or url_for("dispos"))
 
 @app.route("/dispos/nouvelle", methods=["GET", "POST"])
 def nouvelle_dispo():
