@@ -85,6 +85,10 @@ def api_villageois():
 TACHES   = ["jardinage", "bricolage", "courses", "cuisine", "informatique", "garde d'animaux", "déménagement", "autre"]
 CRENEAUX = ["matin", "après-midi", "soir", "journée entière"]
 
+# * swagger
+@app.route("/apidocs")
+def apidocs():
+    return render_template("swagger.html")
 
 # * accueil
 @app.route("/")
