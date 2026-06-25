@@ -241,12 +241,27 @@ def supprimer_dispo(id_dispo):
     return redirect(url_for("dispos"))
 
 # * profil
-@app.route("/profil")
+@app.route("/profil", methods=["GET", "POST"])
 def profil():
     if not session.get("id_user"):
         return redirect(url_for("connexion"))
+    erreur = None
+    succes = None
+    if request.method == "POST":
+        nouveau_pseudo = request.form.get("pseudo", "").strip()
+        if not nouveau_pseudo:
+            erreur = "le pseudo ne peut pas être vide"
+        elif nouveau_pseudo == session["pseudo"]:
+            pass
+        else:
+            try:
+                modele.update_pseudo(session["id_user"], nouveau_pseudo)
+                session["pseudo"] = nouveau_pseudo
+                succes = "pseudo mis à jour !"
+            except Exception:
+                erreur = "ce pseudo est déjà pris"
     user = modele.get_user_by_id(session["id_user"])
-    return render_template("profil.html", user=user)
+    return render_template("profil.html", user=user, erreur=erreur, succes=succes)
 
 # * deconnexion
 @app.route("/deconnexion")

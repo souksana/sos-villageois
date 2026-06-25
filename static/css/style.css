@@ -415,6 +415,13 @@ body {
   font-weight: bold;
 }
 
+.succes {
+  color: #5dae8b;
+  font-size: 0.82em;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
 .erreur {
   color: #e05050;
   font-size: 0.82em;

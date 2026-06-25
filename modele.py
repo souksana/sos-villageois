@@ -342,6 +342,14 @@ def delete_dispo(id_dispo):
     cursor.close()
     conn.close()
 
+def update_pseudo(id_user, nouveau_pseudo):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE Utilisateur SET pseudo=%s WHERE id_user=%s", (nouveau_pseudo, id_user))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 def toggle_interet(id_user, id_dispo):
     conn = get_connection()
     cursor = conn.cursor()

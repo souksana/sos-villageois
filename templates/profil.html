@@ -60,8 +60,25 @@
           </div>
 
         </div>
-      </div>
 
+        <div class="nook-card">
+          {% if erreur %}
+          <p class="erreur">{{ erreur }}</p>
+          {% endif %}
+          {% if succes %}
+          <p class="succes">{{ succes }}</p>
+          {% endif %}
+          <form class="nook-form" method="POST" action="/profil">
+            <div>
+              <label>modifier mon pseudo</label>
+              <input type="text" name="pseudo" value="{{ user.pseudo }}" required />
+            </div>
+            <button class="nook-btn" type="submit">enregistrer</button>
+          </form>
+        </div>
+
+      </div>
     </div>
+
   </body>
 </html>
