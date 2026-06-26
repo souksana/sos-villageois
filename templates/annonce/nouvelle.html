@@ -34,27 +34,30 @@
             <h1>demander de l'aide</h1>
           </div>
 
-          {% if erreur %}
-          <p class="erreur">{{ erreur }}</p>
-          {% endif %}
+          <p class="erreur" id="erreur" style="display:none"></p>
 
-          <form class="nook-form" method="POST" action="/annonces/nouvelle">
+          <form class="nook-form" onsubmit="posterAnnonce(event)">
             <div>
               <label>titre *</label>
-              <input type="text" name="titre" placeholder="ex: besoin d'aide pour mon jardin" required />
+              <input type="text" id="titre" placeholder="ex: besoin d'aide pour mon jardin" required />
             </div>
             <div>
               <label>type de tâche *</label>
-              <select name="tache" required>
+              <select id="tache" required>
                 <option value="" disabled selected>choisir...</option>
-                {% for t in taches %}
-                <option value="{{ t }}">{{ t }}</option>
-                {% endfor %}
+                <option value="jardinage">jardinage</option>
+                <option value="bricolage">bricolage</option>
+                <option value="courses">courses</option>
+                <option value="cuisine">cuisine</option>
+                <option value="informatique">informatique</option>
+                <option value="garde d'animaux">garde d'animaux</option>
+                <option value="déménagement">déménagement</option>
+                <option value="autre">autre</option>
               </select>
             </div>
             <div>
               <label>description</label>
-              <textarea name="description" rows="4" placeholder="décris ce dont tu as besoin..."></textarea>
+              <textarea id="description" rows="4" placeholder="décris ce dont tu as besoin..."></textarea>
             </div>
             <button class="nook-btn" type="submit">poster l'annonce</button>
           </form>
@@ -63,5 +66,27 @@
       </div>
 
     </div>
+    <script>
+      async function posterAnnonce(event) {
+        event.preventDefault();
+        const errEl = document.getElementById('erreur');
+        const res = await fetch('/api/annonces', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titre:       document.getElementById('titre').value.trim(),
+            tache:       document.getElementById('tache').value,
+            description: document.getElementById('description').value.trim(),
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = `/annonces/${data.id_annonce}`;
+        } else {
+          errEl.textContent   = data.error;
+          errEl.style.display = 'block';
+        }
+      }
+    </script>
   </body>
 </html>

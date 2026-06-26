@@ -26,64 +26,98 @@
         <a href="/dispos/nouvelle">+</a>
       </div>
 
-      <div class="nook-content padded">
-        {% if dispos %}
-          {% for d in dispos %}
-          <div class="nook-card dispo-card">
-            <div class="dispo-top">
-              <img
-                class="mini-avatar"
-                src="{{ d.villageois_photo or '/static/img/logo.png' }}"
-                alt="{{ d.pseudo }}"
-                onerror="this.src='/static/img/logo.png'"
-              />
-              <div class="dispo-meta">
-                <span class="annonce-pseudo">{{ d.pseudo }}</span>
-                <div class="dispo-badges">
-                  <span class="dispo-date-badge">{{ d.date_dispo.strftime('%d/%m') }}</span>
-                  <span class="creneau-badge" data-creneau="{{ d.creneau }}">{{ d.creneau }}</span>
-                </div>
-              </div>
-              {% if session.id_user == d.id_user or session.role == "admin" %}
-              <form method="POST" action="/dispos/{{ d.id_dispo }}/supprimer" onsubmit="return confirm('Supprimer ce créneau ?')">
-                <button class="dispo-delete-btn" type="submit">✕</button>
-              </form>
-              {% endif %}
-            </div>
-
-            {% if d.description %}
-            <p class="dispo-desc">{{ d.description[:120] }}{% if d.description|length > 120 %}…{% endif %}</p>
-            {% endif %}
-
-            <div class="dispo-footer">
-              {% if d.interet_count > 0 %}
-              <span class="interet-count">{{ d.interet_count }} intéressé{{ 's' if d.interet_count > 1 }}</span>
-              {% endif %}
-
-              {% if session.id_user != d.id_user %}
-                {% if d.id_dispo in mes_interets %}
-                <form method="POST" action="/dispos/{{ d.id_dispo }}/interesse">
-                  <button class="interesse-btn active" type="submit">✓ je suis dispo !</button>
-                </form>
-                {% else %}
-                <form method="POST" action="/dispos/{{ d.id_dispo }}/interesse">
-                  <button class="interesse-btn" type="submit">je suis intéressé(e)</button>
-                </form>
-                {% endif %}
-              {% elif d.interet_count > 0 %}
-              <a class="interesse-btn active" href="/dispos/{{ d.id_dispo }}">voir les {{ d.interet_count }} intéressé{{ 's' if d.interet_count > 1 }} →</a>
-              {% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="nook-card" style="text-align:center; padding:40px 20px;">
-            <p style="color:#aaa; font-size:0.9em;">personne n'a encore partagé ses dispos</p>
-            <a class="nook-btn" href="/dispos/nouvelle" style="margin-top:16px; display:block;">ajouter les miennes</a>
-          </div>
-        {% endif %}
+      <div class="nook-content padded" id="liste">
+        <p style="text-align:center; color:#aaa; padding:40px;">chargement…</p>
       </div>
 
     </div>
+    <script>
+      function fmtDateShort(iso) {
+        return iso ? iso.slice(8,10)+'/'+iso.slice(5,7) : '';
+      }
+
+      let meId = null;
+      let meRole = null;
+
+      function renderDispos(dispos, mesInterets) {
+        const liste = document.getElementById('liste');
+        if (!dispos.length) {
+          liste.innerHTML = `
+            <div class="nook-card" style="text-align:center; padding:40px 20px;">
+              <p style="color:#aaa; font-size:0.9em;">personne n'a encore partagé ses dispos</p>
+              <a class="nook-btn" href="/dispos/nouvelle" style="margin-top:16px; display:block;">ajouter les miennes</a>
+            </div>`;
+          return;
+        }
+
+        liste.innerHTML = dispos.map(d => {
+          const photo = d.villageois_photo || '/static/img/logo.png';
+          const peutSupprimer = meId === d.id_user || meRole === 'admin';
+          const btnSupprimer  = peutSupprimer
+            ? `<button class="dispo-delete-btn" onclick="supprimerDispo(${d.id_dispo})">✕</button>` : '';
+          const desc = d.description
+            ? `<p class="dispo-desc">${d.description.slice(0,120)}${d.description.length > 120 ? '…' : ''}</p>` : '';
+          const interesseCount = d.interet_count > 0
+            ? `<span class="interet-count">${d.interet_count} intéressé${d.interet_count > 1 ? 's' : ''}</span>` : '';
+
+          let btnInteret = '';
+          if (meId !== d.id_user) {
+            const active = mesInterets.includes(d.id_dispo);
+            btnInteret = `<button class="interesse-btn ${active ? 'active' : ''}" onclick="toggleInteret(${d.id_dispo})">
+              ${active ? '✓ je suis dispo !' : 'je suis intéressé(e)'}
+            </button>`;
+          } else if (d.interet_count > 0) {
+            btnInteret = `<a class="interesse-btn active" href="/dispos/${d.id_dispo}">voir les ${d.interet_count} intéressé${d.interet_count > 1 ? 's' : ''} →</a>`;
+          }
+
+          return `
+            <div class="nook-card dispo-card">
+              <div class="dispo-top">
+                <img class="mini-avatar" src="${photo}" alt="${d.pseudo}" onerror="this.src='/static/img/logo.png'" />
+                <div class="dispo-meta">
+                  <span class="annonce-pseudo">${d.pseudo}</span>
+                  <div class="dispo-badges">
+                    <span class="dispo-date-badge">${fmtDateShort(d.date_dispo)}</span>
+                    <span class="creneau-badge" data-creneau="${d.creneau}">${d.creneau}</span>
+                  </div>
+                </div>
+                ${btnSupprimer}
+              </div>
+              ${desc}
+              <div class="dispo-footer">
+                ${interesseCount}
+                ${btnInteret}
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      async function supprimerDispo(id) {
+        if (!confirm('Supprimer ce créneau ?')) return;
+        const res = await fetch(`/api/dispos/${id}`, { method: 'DELETE' });
+        if (res.ok) charger();
+      }
+
+      async function toggleInteret(id) {
+        await fetch(`/api/dispos/${id}/interet`, { method: 'PUT' });
+        charger();
+      }
+
+      async function charger() {
+        const [disposRes, meRes] = await Promise.all([
+          fetch('/api/dispos'),
+          fetch('/api/users/me')
+        ]);
+        const { dispos, mes_interets } = await disposRes.json();
+        if (meRes.ok) {
+          const me = await meRes.json();
+          meId   = me.id_user;
+          meRole = me.role;
+        }
+        renderDispos(dispos, mes_interets);
+      }
+
+      charger();
+    </script>
   </body>
 </html>

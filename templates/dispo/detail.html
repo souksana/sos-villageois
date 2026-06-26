@@ -26,63 +26,90 @@
         <span></span>
       </div>
 
-      <div class="nook-content padded">
-
-        <div class="nook-card dispo-card">
-          <div class="dispo-top">
-            <img
-              class="detail-avatar"
-              src="{{ dispo.villageois_photo or '/static/img/logo.png' }}"
-              alt="{{ dispo.pseudo }}"
-              onerror="this.src='/static/img/logo.png'"
-            />
-            <div class="dispo-meta">
-              <span class="annonce-pseudo">{{ dispo.pseudo }}</span>
-              <div class="dispo-badges">
-                <span class="dispo-date-badge">{{ dispo.date_dispo.strftime('%d/%m/%Y') }}</span>
-                <span class="creneau-badge" data-creneau="{{ dispo.creneau }}">{{ dispo.creneau }}</span>
-              </div>
-            </div>
-            {% if session.id_user == dispo.id_user or session.role == "admin" %}
-            <form method="POST" action="/dispos/{{ dispo.id_dispo }}/supprimer" onsubmit="return confirm('Supprimer ce créneau ?')">
-              <button class="dispo-delete-btn" type="submit">✕</button>
-            </form>
-            {% endif %}
-          </div>
-
-          {% if dispo.description %}
-          <p class="detail-desc">{{ dispo.description }}</p>
-          {% endif %}
-
-          {% if session.id_user != dispo.id_user %}
-          <form method="POST" action="/dispos/{{ dispo.id_dispo }}/interesse" style="margin-top: 8px;">
-            <button class="interesse-btn {{ 'active' if user_interesse }}" type="submit">
-              {{ '✓ je suis dispo !' if user_interesse else 'je suis intéressé(e)' }}
-            </button>
-          </form>
-          {% endif %}
-        </div>
-
-        {% if session.id_user == dispo.id_user and interets %}
-        <div class="nook-card">
-          <p class="step-title" style="margin-top:0;">{{ interets|length }} personne{{ 's' if interets|length > 1 }} intéressée{{ 's' if interets|length > 1 }}</p>
-          <div class="interets-liste">
-            {% for i in interets %}
-            <div class="interet-item">
-              <img
-                class="mini-avatar"
-                src="{{ i.villageois_photo or '/static/img/logo.png' }}"
-                alt="{{ i.pseudo }}"
-                onerror="this.src='/static/img/logo.png'"
-              />
-              <span class="annonce-pseudo">{{ i.pseudo }}</span>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
+      <div class="nook-content padded" id="contenu">
+        <p style="text-align:center; color:#aaa; padding:40px;">chargement…</p>
       </div>
+
     </div>
+    <script>
+      const id = parseInt(location.pathname.split('/').pop());
+
+      function fmtDate(iso) {
+        return iso ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : '';
+      }
+
+      function render(data, me) {
+        const peutSupprimer = me && (me.id_user === data.id_user || me.role === 'admin');
+        const photo = data.villageois_photo || '/static/img/logo.png';
+
+        const btnSuppr = peutSupprimer
+          ? `<button class="dispo-delete-btn" onclick="supprimerDispo()">✕</button>` : '';
+
+        let btnInteret = '';
+        if (me && me.id_user !== data.id_user) {
+          btnInteret = `
+            <button class="interesse-btn ${data.user_interesse ? 'active' : ''}" style="margin-top:8px;" onclick="toggleInteret()">
+              ${data.user_interesse ? '✓ je suis dispo !' : 'je suis intéressé(e)'}
+            </button>`;
+        }
+
+        const interetsHtml = (me && me.id_user === data.id_user && data.interets.length)
+          ? `<div class="nook-card">
+               <p class="step-title" style="margin-top:0;">${data.interets.length} personne${data.interets.length > 1 ? 's' : ''} intéressée${data.interets.length > 1 ? 's' : ''}</p>
+               <div class="interets-liste">
+                 ${data.interets.map(i => `
+                   <div class="interet-item">
+                     <img class="mini-avatar" src="${i.villageois_photo || '/static/img/logo.png'}" alt="${i.pseudo}" onerror="this.src='/static/img/logo.png'" />
+                     <span class="annonce-pseudo">${i.pseudo}</span>
+                   </div>`).join('')}
+               </div>
+             </div>` : '';
+
+        document.getElementById('contenu').innerHTML = `
+          <div class="nook-card dispo-card">
+            <div class="dispo-top">
+              <img class="detail-avatar" src="${photo}" alt="${data.pseudo}" onerror="this.src='/static/img/logo.png'" />
+              <div class="dispo-meta">
+                <span class="annonce-pseudo">${data.pseudo}</span>
+                <div class="dispo-badges">
+                  <span class="dispo-date-badge">${fmtDate(data.date_dispo)}</span>
+                  <span class="creneau-badge" data-creneau="${data.creneau}">${data.creneau}</span>
+                </div>
+              </div>
+              ${btnSuppr}
+            </div>
+            ${data.description ? `<p class="detail-desc">${data.description}</p>` : ''}
+            ${btnInteret}
+          </div>
+          ${interetsHtml}`;
+      }
+
+      async function charger() {
+        const [dispoRes, meRes] = await Promise.all([
+          fetch(`/api/dispos/${id}`),
+          fetch('/api/users/me')
+        ]);
+        if (!dispoRes.ok) {
+          document.getElementById('contenu').innerHTML = '<p style="text-align:center;color:#aaa;padding:40px;">disponibilité introuvable</p>';
+          return;
+        }
+        const data = await dispoRes.json();
+        const me   = meRes.ok ? await meRes.json() : null;
+        render(data, me);
+      }
+
+      async function supprimerDispo() {
+        if (!confirm('Supprimer ce créneau ?')) return;
+        const res = await fetch(`/api/dispos/${id}`, { method: 'DELETE' });
+        if (res.ok) window.location.href = '/dispos';
+      }
+
+      async function toggleInteret() {
+        await fetch(`/api/dispos/${id}/interet`, { method: 'PUT' });
+        charger();
+      }
+
+      charger();
+    </script>
   </body>
 </html>

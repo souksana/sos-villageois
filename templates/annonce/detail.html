@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ annonce.titre }} - SOS Villageois</title>
+    <title>Annonce - SOS Villageois</title>
     <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
     <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
@@ -26,86 +26,116 @@
         <span></span>
       </div>
 
-      <div class="nook-content padded">
-        <div class="nook-card detail-card">
-
-          <div class="detail-header">
-            <img
-              class="detail-avatar"
-              src="{{ annonce.villageois_photo or '/static/img/logo.png' }}"
-              alt="{{ annonce.pseudo }}"
-              onerror="this.src='/static/img/logo.png'"
-            />
-            <div>
-              <p class="annonce-pseudo">{{ annonce.pseudo }}</p>
-              <p class="annonce-date">{{ annonce.date_creation.strftime('%d/%m/%Y') }}</p>
-            </div>
-            <span class="tache-badge" data-tache="{{ annonce.tache }}">{{ annonce.tache }}</span>
-          </div>
-
-          <h2 class="detail-titre">{{ annonce.titre }}</h2>
-
-          {% if annonce.description %}
-          <p class="detail-desc">{{ annonce.description }}</p>
-          {% endif %}
-
-          {% if session.id_user == annonce.id_user or session.role == "admin" %}
-          <form method="POST" action="/annonces/{{ annonce.id_annonce }}/supprimer" onsubmit="return confirm('Supprimer cette annonce ?')">
-            <button class="nook-btn delete-btn" type="submit">supprimer l'annonce</button>
-          </form>
-          {% endif %}
-
-        </div>
-
-        <div class="nook-card reactions-section">
-          <div class="reactions-bar">
-            {% for type_key, label in reaction_types %}
-            <form method="POST" action="/annonces/{{ annonce.id_annonce }}/reagir">
-              <input type="hidden" name="type" value="{{ type_key }}">
-              <button class="reaction-btn {% if type_key == 'urgence' %}reaction-urgence{% endif %} {% if type_key in user_reactions %}active{% endif %}" type="submit">
-                {{ label }}
-                {% if reactions.get(type_key, 0) > 0 %}
-                <span class="reaction-count">{{ reactions.get(type_key) }}</span>
-                {% endif %}
-              </button>
-            </form>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="nook-card commentaires-section">
-          <h3 class="commentaires-titre">Commentaires {% if commentaires %}<span class="com-count">{{ commentaires|length }}</span>{% endif %}</h3>
-
-          {% if commentaires %}
-          <ul class="commentaires-liste">
-            {% for com in commentaires %}
-            <li class="commentaire">
-              <img
-                class="com-avatar"
-                src="{{ com.villageois_photo or '/static/img/logo.png' }}"
-                alt="{{ com.pseudo }}"
-                onerror="this.src='/static/img/logo.png'"
-              />
-              <div class="com-body">
-                <span class="com-pseudo">{{ com.pseudo }}</span>
-                <span class="com-date">{{ com.date_com.strftime('%d/%m/%Y') }}</span>
-                <p class="com-contenu">{{ com.contenu }}</p>
-              </div>
-            </li>
-            {% endfor %}
-          </ul>
-          {% else %}
-          <p class="com-vide">Aucun commentaire pour l'instant.</p>
-          {% endif %}
-
-          <form class="com-form" method="POST" action="/annonces/{{ annonce.id_annonce }}/commenter">
-            <textarea class="com-input" name="contenu" placeholder="Laisser un commentaire…" rows="3" required></textarea>
-            <button class="nook-btn" type="submit">envoyer</button>
-          </form>
-        </div>
-
+      <div class="nook-content padded" id="contenu">
+        <p style="text-align:center; color:#aaa; padding:40px;">chargement…</p>
       </div>
 
     </div>
+    <script>
+      const id = parseInt(location.pathname.split('/').pop());
+
+      function fmtDate(iso) {
+        return iso ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : '';
+      }
+
+      function render(data, me) {
+        const peutSupprimer = me && (me.id_user === data.id_user || me.role === 'admin');
+        const photo = data.villageois_photo || '/static/img/logo.png';
+
+        const btnSuppr = peutSupprimer
+          ? `<button class="nook-btn delete-btn" onclick="supprimerAnnonce()">supprimer l'annonce</button>` : '';
+
+        const REACTIONS = [['urgence','‼️'],['coeur','💚'],['rire','😹']];
+        const reactionBtns = REACTIONS.map(([type, label]) => {
+          const count   = data.reactions[type] || 0;
+          const isActive = data.user_reactions.includes(type);
+          return `
+            <button class="reaction-btn ${type === 'urgence' ? 'reaction-urgence' : ''} ${isActive ? 'active' : ''}"
+                    onclick="reagir('${type}')">
+              ${label}${count > 0 ? `<span class="reaction-count">${count}</span>` : ''}
+            </button>`;
+        }).join('');
+
+        const commentairesHtml = data.commentaires.length
+          ? `<ul class="commentaires-liste">${data.commentaires.map(c => `
+              <li class="commentaire">
+                <img class="com-avatar" src="${c.villageois_photo || '/static/img/logo.png'}" alt="${c.pseudo}" onerror="this.src='/static/img/logo.png'" />
+                <div class="com-body">
+                  <span class="com-pseudo">${c.pseudo}</span>
+                  <span class="com-date">${fmtDate(c.date_com)}</span>
+                  <p class="com-contenu">${c.contenu}</p>
+                </div>
+              </li>`).join('')}
+            </ul>`
+          : `<p class="com-vide">Aucun commentaire pour l'instant.</p>`;
+
+        document.getElementById('contenu').innerHTML = `
+          <div class="nook-card detail-card">
+            <div class="detail-header">
+              <img class="detail-avatar" src="${photo}" alt="${data.pseudo}" onerror="this.src='/static/img/logo.png'" />
+              <div>
+                <p class="annonce-pseudo">${data.pseudo}</p>
+                <p class="annonce-date">${fmtDate(data.date_creation)}</p>
+              </div>
+              <span class="tache-badge" data-tache="${data.tache}">${data.tache}</span>
+            </div>
+            <h2 class="detail-titre">${data.titre}</h2>
+            ${data.description ? `<p class="detail-desc">${data.description}</p>` : ''}
+            ${btnSuppr}
+          </div>
+
+          <div class="nook-card reactions-section">
+            <div class="reactions-bar">${reactionBtns}</div>
+          </div>
+
+          <div class="nook-card commentaires-section">
+            <h3 class="commentaires-titre">Commentaires ${data.commentaires.length > 0 ? `<span class="com-count">${data.commentaires.length}</span>` : ''}</h3>
+            ${commentairesHtml}
+            <form class="com-form" onsubmit="commenter(event)">
+              <textarea class="com-input" id="com-contenu" placeholder="Laisser un commentaire…" rows="3" required></textarea>
+              <button class="nook-btn" type="submit">envoyer</button>
+            </form>
+          </div>`;
+      }
+
+      async function charger() {
+        const [dataRes, meRes] = await Promise.all([
+          fetch(`/api/annonces/${id}`),
+          fetch('/api/users/me')
+        ]);
+        const data = await dataRes.json();
+        const me   = meRes.ok ? await meRes.json() : null;
+        if (!dataRes.ok) {
+          document.getElementById('contenu').innerHTML = '<p style="text-align:center;color:#aaa;padding:40px;">annonce introuvable</p>';
+          return;
+        }
+        render(data, me);
+      }
+
+      async function supprimerAnnonce() {
+        if (!confirm('Supprimer cette annonce ?')) return;
+        const res = await fetch(`/api/annonces/${id}`, { method: 'DELETE' });
+        if (res.ok) window.location.href = '/annonces';
+      }
+
+      async function reagir(type) {
+        await fetch(`/api/annonces/${id}/reactions/${type}`, { method: 'PUT' });
+        charger();
+      }
+
+      async function commenter(event) {
+        event.preventDefault();
+        const contenu = document.getElementById('com-contenu').value.trim();
+        if (!contenu) return;
+        const res = await fetch(`/api/annonces/${id}/commentaires`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contenu })
+        });
+        if (res.ok) charger();
+      }
+
+      charger();
+    </script>
   </body>
 </html>

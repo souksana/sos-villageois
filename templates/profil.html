@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ user.pseudo }} - SOS Villageois</title>
+    <title>Mon profil - SOS Villageois</title>
     <link rel="icon" type="image/x-icon" href="/static/img/Favicons/favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="/static/img/Favicons/favicon.svg" />
     <link rel="apple-touch-icon" href="/static/img/Favicons/apple-touch-icon.png" />
@@ -26,59 +26,82 @@
         <span></span>
       </div>
 
-      <div class="nook-content padded">
-        <div class="profil-page">
+      <div class="nook-content padded" id="contenu">
+        <p style="text-align:center; color:#aaa; padding:40px;">chargement…</p>
+      </div>
 
-          <div class="id-card">
-            <div class="id-card-top">
-              <div class="id-speech-bubble">Bienvenue dans le village !</div>
-            </div>
+    </div>
+    <script>
+      async function charger() {
+        const res = await fetch('/api/users/me');
+        if (!res.ok) { window.location.href = '/connexion'; return; }
+        const user = await res.json();
+        render(user);
+      }
 
-            <div class="id-card-body">
-              <div class="id-card-avatar">
-                <img
-                  src="{{ user.villageois_photo or '/static/img/logo.png' }}"
-                  alt="{{ user.villageois_nom or 'avatar' }}"
-                  onerror="this.src='/static/img/logo.png'"
-                />
+      function render(user) {
+        const photo = user.villageois_photo || '/static/img/logo.png';
+        const role  = user.role === 'admin' ? 'Admin' : 'Villageois(e)';
+        document.getElementById('contenu').innerHTML = `
+          <div class="profil-page">
+            <div class="id-card">
+              <div class="id-card-top">
+                <div class="id-speech-bubble">Bienvenue dans le village !</div>
               </div>
-
-              <div class="id-card-info">
-                <p class="id-island">Île SOS Villageois</p>
-                <p class="id-name">{{ user.pseudo }}</p>
-                <p class="id-role">{{ "Admin" if user.role == "admin" else "Villageois(e)" }}</p>
-                {% if user.villageois_nom %}
-                <p class="id-villager">ressemble à {{ user.villageois_nom }}</p>
-                {% endif %}
-                <p class="id-email">{{ user.email }}</p>
+              <div class="id-card-body">
+                <div class="id-card-avatar">
+                  <img src="${photo}" alt="${user.villageois_nom || 'avatar'}" onerror="this.src='/static/img/logo.png'" />
+                </div>
+                <div class="id-card-info">
+                  <p class="id-island">Île SOS Villageois</p>
+                  <p class="id-name" id="id-name">${user.pseudo}</p>
+                  <p class="id-role">${role}</p>
+                  ${user.villageois_nom ? `<p class="id-villager">ressemble à ${user.villageois_nom}</p>` : ''}
+                  <p class="id-email">${user.email}</p>
+                </div>
               </div>
-            </div>
-
-            <div class="id-card-footer">
-              Membre de l'île &nbsp;·&nbsp; SOS Villageois
+              <div class="id-card-footer">Membre de l'île &nbsp;·&nbsp; SOS Villageois</div>
             </div>
           </div>
 
-        </div>
+          <div class="nook-card">
+            <p id="profil-erreur" class="erreur" style="display:none"></p>
+            <p id="profil-succes" class="succes" style="display:none"></p>
+            <form class="nook-form" onsubmit="updateProfil(event)">
+              <div>
+                <label>modifier mon pseudo</label>
+                <input type="text" id="pseudo-input" value="${user.pseudo}" required />
+              </div>
+              <button class="nook-btn" type="submit">enregistrer</button>
+            </form>
+          </div>`;
+      }
 
-        <div class="nook-card">
-          {% if erreur %}
-          <p class="erreur">{{ erreur }}</p>
-          {% endif %}
-          {% if succes %}
-          <p class="succes">{{ succes }}</p>
-          {% endif %}
-          <form class="nook-form" method="POST" action="/profil">
-            <div>
-              <label>modifier mon pseudo</label>
-              <input type="text" name="pseudo" value="{{ user.pseudo }}" required />
-            </div>
-            <button class="nook-btn" type="submit">enregistrer</button>
-          </form>
-        </div>
+      async function updateProfil(event) {
+        event.preventDefault();
+        const pseudo = document.getElementById('pseudo-input').value.trim();
+        const errEl  = document.getElementById('profil-erreur');
+        const okEl   = document.getElementById('profil-succes');
+        errEl.style.display = 'none';
+        okEl.style.display  = 'none';
 
-      </div>
-    </div>
+        const res  = await fetch('/api/profil', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pseudo })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          okEl.textContent = 'pseudo mis à jour !';
+          okEl.style.display = 'block';
+          document.getElementById('id-name').textContent = data.pseudo;
+        } else {
+          errEl.textContent   = data.error;
+          errEl.style.display = 'block';
+        }
+      }
 
+      charger();
+    </script>
   </body>
 </html>

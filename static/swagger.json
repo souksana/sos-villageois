@@ -2,90 +2,57 @@
   "openapi": "3.0.0",
   "info": {
     "title": "SOS Villageois API",
-    "description": "API du réseau d'entraide SOS Villageois — thème Animal Crossing",
-    "version": "1.0.0"
+    "description": "API REST du réseau d'entraide SOS Villageois — thème Animal Crossing.\n\nToutes les routes `/api/...` échangent exclusivement en JSON.\nL'authentification est gérée par session serveur (cookie de session Flask).\n\n**Comptes de test**\n- `test@sos.fr` / `test123` — utilisateur\n- `admin@sos.fr` / `admin123` — admin",
+    "version": "2.0.0"
   },
   "servers": [
-    { "url": "http://localhost:5000", "description": "Serveur local" }
+    { "url": "http://localhost:5001", "description": "Serveur local" }
   ],
   "tags": [
-    { "name": "Villageois", "description": "Données Animal Crossing via Nookipedia" },
-    { "name": "Auth", "description": "Inscription et connexion" },
-    { "name": "Annonces", "description": "Demandes d'aide entre voisins" },
-    { "name": "Disponibilités", "description": "Créneaux proposés par les villageois" }
+    { "name": "Auth",           "description": "Inscription, connexion, session" },
+    { "name": "Annonces",       "description": "Demandes d'aide entre voisins" },
+    { "name": "Disponibilités", "description": "Créneaux proposés par les villageois" },
+    { "name": "Profil / Admin", "description": "Gestion du compte et administration" },
+    { "name": "Villageois",     "description": "Données Animal Crossing via Nookipedia (externe)" }
   ],
   "paths": {
-    "/api/villageois": {
+
+    "/api/users/me": {
       "get": {
-        "tags": ["Villageois"],
-        "summary": "Liste des villageois Animal Crossing",
-        "description": "Fallback en cascade : Nookipedia API → acnhapi.com → liste mock locale",
+        "tags": ["Auth"],
+        "summary": "Utilisateur connecté",
+        "description": "Retourne les informations de la session active. Retourne 401 si non connecté.",
         "responses": {
           "200": {
-            "description": "Liste des villageois",
+            "description": "Utilisateur connecté",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/Villageois" }
-                },
-                "example": [
-                  { "name": "Raymond", "image_url": "https://dodo.ac/np/images/raymond.png", "species": "Cat" },
-                  { "name": "Ankha",   "image_url": "https://dodo.ac/np/images/ankha.png",   "species": "Cat" },
-                  { "name": "Marshal", "image_url": "https://dodo.ac/np/images/marshal.png", "species": "Squirrel" }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/inscription": {
-      "get": {
-        "tags": ["Auth"],
-        "summary": "Formulaire d'inscription",
-        "responses": { "200": { "description": "Page HTML du formulaire" } }
-      },
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Créer un compte",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "required": ["pseudo", "email", "mot_de_passe", "confirm_mdp"],
-                "properties": {
-                  "pseudo":           { "type": "string",  "example": "souksana" },
-                  "email":            { "type": "string",  "format": "email", "example": "souksana@mail.fr" },
-                  "mot_de_passe":     { "type": "string",  "format": "password" },
-                  "confirm_mdp":      { "type": "string",  "format": "password" },
-                  "villageois_nom":   { "type": "string",  "example": "Raymond" },
-                  "villageois_photo": { "type": "string",  "example": "https://dodo.ac/np/images/raymond.png" }
+                "schema": { "$ref": "#/components/schemas/Me" },
+                "example": {
+                  "id_user": 3,
+                  "pseudo": "souksana",
+                  "email": "test@sos.fr",
+                  "role": "user",
+                  "villageois_nom": "Isabelle",
+                  "villageois_photo": ""
                 }
               }
             }
-          }
-        },
-        "responses": {
-          "302": { "description": "Redirige vers / si succès, ou affiche une erreur" }
+          },
+          "401": { "description": "Non connecté", "content": { "application/json": { "example": { "error": "not authenticated" } } } }
         }
       }
     },
-    "/connexion": {
-      "get": {
-        "tags": ["Auth"],
-        "summary": "Formulaire de connexion",
-        "responses": { "200": { "description": "Page HTML du formulaire" } }
-      },
+
+    "/api/connexion": {
       "post": {
         "tags": ["Auth"],
         "summary": "Se connecter",
+        "description": "Crée une session serveur. Retourne les infos de base de l'utilisateur.",
         "requestBody": {
           "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "required": ["email", "mot_de_passe"],
@@ -98,140 +65,304 @@
           }
         },
         "responses": {
-          "302": { "description": "Redirige vers / si succès" }
+          "200": {
+            "description": "Connexion réussie",
+            "content": { "application/json": { "example": { "ok": true, "pseudo": "souksana", "role": "user" } } }
+          },
+          "401": { "description": "Identifiants incorrects", "content": { "application/json": { "example": { "error": "email ou mot de passe incorrect" } } } }
         }
       }
     },
-    "/deconnexion": {
-      "get": {
+
+    "/api/deconnexion": {
+      "post": {
         "tags": ["Auth"],
-        "summary": "Se déconnecter (vide la session)",
-        "responses": { "302": { "description": "Redirige vers /connexion" } }
+        "summary": "Se déconnecter",
+        "description": "Vide la session serveur.",
+        "responses": {
+          "200": { "description": "Session vidée", "content": { "application/json": { "example": { "ok": true } } } }
+        }
       }
     },
-    "/annonces": {
+
+    "/api/users": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Créer un compte (inscription)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["pseudo", "email", "mot_de_passe"],
+                "properties": {
+                  "pseudo":           { "type": "string", "maxLength": 50, "example": "souksana" },
+                  "email":            { "type": "string", "format": "email", "example": "souksana@mail.fr" },
+                  "mot_de_passe":     { "type": "string", "format": "password", "example": "monmotdepasse" },
+                  "villageois_nom":   { "type": "string", "example": "Raymond" },
+                  "villageois_photo": { "type": "string", "example": "https://dodo.ac/np/images/raymond.png" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Compte créé", "content": { "application/json": { "example": { "ok": true } } } },
+          "409": { "description": "Pseudo ou email déjà utilisé", "content": { "application/json": { "example": { "error": "pseudo ou email déjà utilisé" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Profil / Admin"],
+        "summary": "Liste de tous les utilisateurs",
+        "description": "Réservé aux admins. Retourne 403 sinon.",
+        "responses": {
+          "200": {
+            "description": "Liste des utilisateurs",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/UserAdmin" } },
+                "example": [
+                  { "id_user": 1, "pseudo": "admin", "email": "admin@sos.fr", "role": "admin", "villageois_nom": "Tom Nook" },
+                  { "id_user": 3, "pseudo": "souksana", "email": "test@sos.fr", "role": "user", "villageois_nom": "Isabelle" }
+                ]
+              }
+            }
+          },
+          "403": { "description": "Accès refusé", "content": { "application/json": { "example": { "error": "forbidden" } } } }
+        }
+      }
+    },
+
+    "/api/users/{id_user}": {
+      "delete": {
+        "tags": ["Profil / Admin"],
+        "summary": "Supprimer un utilisateur",
+        "description": "Réservé aux admins. Impossible de se supprimer soi-même.",
+        "parameters": [{ "name": "id_user", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 3 }],
+        "responses": {
+          "200": { "description": "Supprimé", "content": { "application/json": { "example": { "ok": true } } } },
+          "400": { "description": "Auto-suppression interdite", "content": { "application/json": { "example": { "error": "impossible de se supprimer soi-même" } } } },
+          "403": { "description": "Accès refusé" }
+        }
+      }
+    },
+
+    "/api/profil": {
+      "put": {
+        "tags": ["Profil / Admin"],
+        "summary": "Modifier son pseudo",
+        "description": "Nécessite d'être connecté. Met à jour le pseudo dans la session.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["pseudo"],
+                "properties": {
+                  "pseudo": { "type": "string", "maxLength": 50, "example": "nouveaupseudo" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Pseudo mis à jour", "content": { "application/json": { "example": { "ok": true, "pseudo": "nouveaupseudo" } } } },
+          "400": { "description": "Pseudo vide" },
+          "401": { "description": "Non connecté" },
+          "409": { "description": "Pseudo déjà pris", "content": { "application/json": { "example": { "error": "ce pseudo est déjà pris" } } } }
+        }
+      }
+    },
+
+    "/api/annonces": {
       "get": {
         "tags": ["Annonces"],
         "summary": "Liste des annonces ouvertes",
-        "description": "Nécessite d'être connecté. Tri possible via paramètre `tri`.",
+        "description": "Toutes les annonces avec statut 'ouverte', avec compteurs de réactions. Nécessite d'être connecté.",
         "parameters": [
           {
             "name": "tri",
             "in": "query",
-            "description": "Ordre de tri des annonces",
+            "description": "Ordre de tri",
             "schema": { "type": "string", "enum": ["recent", "ancien", "urgence"], "default": "recent" }
           }
         ],
         "responses": {
-          "200": { "description": "Page HTML avec la liste des annonces" },
-          "302": { "description": "Redirige vers /connexion si non connecté" }
+          "200": {
+            "description": "Liste des annonces",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AnnonceResume" } },
+                "example": [
+                  {
+                    "id_annonce": 1,
+                    "titre": "besoin d'aide pour mon jardin",
+                    "tache": "jardinage",
+                    "date_creation": "2026-06-20T10:30:00",
+                    "pseudo": "souksana",
+                    "villageois_photo": "",
+                    "urgence_count": 2,
+                    "coeur_count": 1,
+                    "rire_count": 0
+                  }
+                ]
+              }
+            }
+          },
+          "401": { "description": "Non connecté" }
         }
-      }
-    },
-    "/annonces/nouvelle": {
-      "get": {
-        "tags": ["Annonces"],
-        "summary": "Formulaire de création d'annonce",
-        "responses": { "200": { "description": "Page HTML du formulaire" } }
       },
       "post": {
         "tags": ["Annonces"],
         "summary": "Créer une annonce",
+        "description": "Nécessite d'être connecté. Retourne l'annonce créée avec son ID.",
         "requestBody": {
           "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "required": ["titre", "tache"],
                 "properties": {
-                  "titre":       { "type": "string", "example": "besoin d'aide pour mon jardin" },
+                  "titre":       { "type": "string", "maxLength": 100, "example": "besoin d'aide pour mon jardin" },
                   "tache":       { "type": "string", "enum": ["jardinage","bricolage","courses","cuisine","informatique","garde d'animaux","déménagement","autre"] },
-                  "description": { "type": "string", "example": "j'ai besoin d'aide pour tailler mes haies samedi matin" }
+                  "description": { "type": "string", "maxLength": 2000, "example": "j'ai besoin d'aide pour tailler mes haies samedi matin" }
                 }
               }
             }
           }
         },
-        "responses": { "302": { "description": "Redirige vers /annonces après création" } }
-      }
-    },
-    "/annonces/{id_annonce}": {
-      "get": {
-        "tags": ["Annonces"],
-        "summary": "Détail d'une annonce",
-        "description": "Affiche l'annonce, ses commentaires et ses réactions",
-        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
         "responses": {
-          "200": { "description": "Page HTML du détail" },
-          "302": { "description": "Redirige vers /annonces si l'annonce n'existe pas" }
+          "201": {
+            "description": "Annonce créée",
+            "content": { "application/json": { "example": { "id_annonce": 5, "titre": "besoin d'aide pour mon jardin", "tache": "jardinage", "date_creation": "2026-06-26T14:00:00", "id_user": 3 } } }
+          },
+          "400": { "description": "Titre manquant ou type de tâche invalide", "content": { "application/json": { "example": { "error": "titre et type de tâche obligatoires" } } } },
+          "401": { "description": "Non connecté" }
         }
       }
     },
-    "/annonces/{id_annonce}/reagir": {
-      "post": {
+
+    "/api/annonces/{id_annonce}": {
+      "get": {
         "tags": ["Annonces"],
-        "summary": "Ajouter ou retirer une réaction",
-        "description": "Toggle : si la réaction existe déjà, elle est supprimée",
-        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" } }],
-        "requestBody": {
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "type": { "type": "string", "enum": ["urgence", "coeur", "rire"] }
+        "summary": "Détail d'une annonce",
+        "description": "Retourne l'annonce avec ses commentaires, ses réactions globales et les réactions de l'utilisateur connecté.",
+        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": {
+            "description": "Détail complet",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id_annonce": 1,
+                  "titre": "besoin d'aide pour mon jardin",
+                  "description": "haies à tailler",
+                  "tache": "jardinage",
+                  "date_creation": "2026-06-20T10:30:00",
+                  "pseudo": "souksana",
+                  "commentaires": [
+                    { "id_com": 1, "contenu": "je peux t'aider !", "pseudo": "admin", "date_com": "2026-06-20T11:00:00" }
+                  ],
+                  "reactions": { "urgence": 2, "coeur": 1 },
+                  "user_reactions": ["coeur"]
                 }
               }
             }
-          }
-        },
-        "responses": { "302": { "description": "Redirige vers le détail de l'annonce" } }
+          },
+          "401": { "description": "Non connecté" },
+          "404": { "description": "Annonce introuvable" }
+        }
+      },
+      "delete": {
+        "tags": ["Annonces"],
+        "summary": "Supprimer une annonce",
+        "description": "Autorisé pour l'auteur de l'annonce ou un admin. Retourne 403 sinon.",
+        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": { "description": "Supprimée", "content": { "application/json": { "example": { "ok": true } } } },
+          "401": { "description": "Non connecté" },
+          "403": { "description": "Pas le droit", "content": { "application/json": { "example": { "error": "forbidden" } } } },
+          "404": { "description": "Annonce introuvable" }
+        }
       }
     },
-    "/annonces/{id_annonce}/commenter": {
+
+    "/api/annonces/{id_annonce}/reactions/{reaction_type}": {
+      "put": {
+        "tags": ["Annonces"],
+        "summary": "Toggle une réaction",
+        "description": "Si la réaction existe déjà pour cet utilisateur, elle est supprimée (toggle). Types valides : urgence, coeur, rire.",
+        "parameters": [
+          { "name": "id_annonce",    "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 },
+          { "name": "reaction_type", "in": "path", "required": true, "schema": { "type": "string", "enum": ["urgence", "coeur", "rire"] }, "example": "urgence" }
+        ],
+        "responses": {
+          "200": { "description": "Toggle effectué", "content": { "application/json": { "example": { "ok": true } } } },
+          "400": { "description": "Type de réaction invalide" },
+          "401": { "description": "Non connecté" }
+        }
+      }
+    },
+
+    "/api/annonces/{id_annonce}/commentaires": {
       "post": {
         "tags": ["Annonces"],
         "summary": "Poster un commentaire",
-        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
         "requestBody": {
+          "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "required": ["contenu"],
                 "properties": {
-                  "contenu": { "type": "string", "example": "je peux t'aider samedi !" }
+                  "contenu": { "type": "string", "maxLength": 1000, "example": "je peux t'aider samedi !" }
                 }
               }
             }
           }
         },
-        "responses": { "302": { "description": "Redirige vers le détail de l'annonce" } }
+        "responses": {
+          "200": { "description": "Commentaire ajouté", "content": { "application/json": { "example": { "ok": true } } } },
+          "400": { "description": "Contenu vide" },
+          "401": { "description": "Non connecté" }
+        }
       }
     },
-    "/annonces/{id_annonce}/supprimer": {
-      "post": {
-        "tags": ["Annonces"],
-        "summary": "Supprimer une annonce",
-        "description": "Autorisé uniquement pour l'auteur de l'annonce ou un admin",
-        "parameters": [{ "name": "id_annonce", "in": "path", "required": true, "schema": { "type": "integer" } }],
-        "responses": { "302": { "description": "Redirige vers /annonces" } }
-      }
-    },
-    "/dispos": {
+
+    "/api/dispos": {
       "get": {
         "tags": ["Disponibilités"],
         "summary": "Liste des disponibilités à venir",
-        "description": "Filtrées à partir d'aujourd'hui, triées par date puis créneau",
-        "responses": { "200": { "description": "Page HTML" } }
-      }
-    },
-    "/dispos/nouvelle": {
-      "get": {
-        "tags": ["Disponibilités"],
-        "summary": "Formulaire de déclaration de disponibilité",
-        "responses": { "200": { "description": "Page HTML du formulaire" } }
+        "description": "Filtrées à partir d'aujourd'hui, triées par date puis créneau. Inclut la liste des IDs de dispos où l'utilisateur a marqué son intérêt.",
+        "responses": {
+          "200": {
+            "description": "Dispos + mes intérêts",
+            "content": {
+              "application/json": {
+                "example": {
+                  "dispos": [
+                    {
+                      "id_dispo": 1,
+                      "date_dispo": "2026-06-28",
+                      "creneau": "matin",
+                      "description": "disponible pour jardinage",
+                      "pseudo": "souksana",
+                      "villageois_photo": "",
+                      "interet_count": 2
+                    }
+                  ],
+                  "mes_interets": [1, 3]
+                }
+              }
+            }
+          },
+          "401": { "description": "Non connecté" }
+        }
       },
       "post": {
         "tags": ["Disponibilités"],
@@ -239,58 +370,152 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "required": ["date_dispo", "creneau"],
                 "properties": {
                   "date_dispo":  { "type": "string", "format": "date", "example": "2026-06-28" },
                   "creneau":     { "type": "string", "enum": ["matin", "après-midi", "soir", "journée entière"] },
-                  "description": { "type": "string", "example": "disponible pour jardinage ou courses" }
+                  "description": { "type": "string", "maxLength": 500, "example": "disponible pour jardinage ou courses" }
                 }
               }
             }
           }
         },
-        "responses": { "302": { "description": "Redirige vers /dispos" } }
+        "responses": {
+          "201": { "description": "Disponibilité créée", "content": { "application/json": { "example": { "ok": true } } } },
+          "400": { "description": "Date ou créneau manquant/invalide", "content": { "application/json": { "example": { "error": "date et créneau obligatoires" } } } },
+          "401": { "description": "Non connecté" }
+        }
       }
     },
-    "/dispos/{id_dispo}": {
+
+    "/api/dispos/{id_dispo}": {
       "get": {
         "tags": ["Disponibilités"],
         "summary": "Détail d'une disponibilité",
-        "description": "Le propriétaire voit la liste des villageois intéressés",
-        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" } }],
-        "responses": { "200": { "description": "Page HTML du détail" } }
-      }
-    },
-    "/dispos/{id_dispo}/interesse": {
-      "post": {
-        "tags": ["Disponibilités"],
-        "summary": "Exprimer ou retirer son intérêt",
-        "description": "Toggle — impossible de s'inscrire sur sa propre disponibilité",
-        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" } }],
-        "responses": { "302": { "description": "Redirige vers la page précédente" } }
-      }
-    },
-    "/dispos/{id_dispo}/supprimer": {
-      "post": {
+        "description": "Inclut la liste des utilisateurs intéressés et si l'utilisateur connecté a exprimé son intérêt.",
+        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": {
+            "description": "Détail complet",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id_dispo": 1,
+                  "date_dispo": "2026-06-28",
+                  "creneau": "matin",
+                  "description": "disponible pour jardinage",
+                  "pseudo": "souksana",
+                  "villageois_photo": "",
+                  "interets": [
+                    { "id_user": 1, "pseudo": "admin", "villageois_photo": "" }
+                  ],
+                  "user_interesse": false
+                }
+              }
+            }
+          },
+          "401": { "description": "Non connecté" },
+          "404": { "description": "Disponibilité introuvable" }
+        }
+      },
+      "delete": {
         "tags": ["Disponibilités"],
         "summary": "Supprimer une disponibilité",
-        "description": "Autorisé uniquement pour l'auteur ou un admin",
-        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" } }],
-        "responses": { "302": { "description": "Redirige vers /dispos" } }
+        "description": "Autorisé pour l'auteur ou un admin.",
+        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": { "description": "Supprimée", "content": { "application/json": { "example": { "ok": true } } } },
+          "401": { "description": "Non connecté" },
+          "403": { "description": "Pas le droit" },
+          "404": { "description": "Disponibilité introuvable" }
+        }
+      }
+    },
+
+    "/api/dispos/{id_dispo}/interet": {
+      "put": {
+        "tags": ["Disponibilités"],
+        "summary": "Toggle l'intérêt pour une disponibilité",
+        "description": "Impossible de s'inscrire sur sa propre disponibilité. Toggle : si déjà intéressé, se désinscrit.",
+        "parameters": [{ "name": "id_dispo", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": { "description": "Toggle effectué", "content": { "application/json": { "example": { "ok": true } } } },
+          "401": { "description": "Non connecté" },
+          "403": { "description": "Impossible sur sa propre dispo" },
+          "404": { "description": "Disponibilité introuvable" }
+        }
+      }
+    },
+
+    "/api/villageois": {
+      "get": {
+        "tags": ["Villageois"],
+        "summary": "Liste de villageois Animal Crossing",
+        "description": "Fallback en cascade : Nookipedia API (clé configurée) → acnhapi.com (public) → liste mock locale. Utilisé pour la page d'inscription.",
+        "responses": {
+          "200": {
+            "description": "Liste de villageois",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Villageois" } },
+                "example": [
+                  { "name": "Raymond", "image_url": "https://dodo.ac/np/images/raymond.png", "species": "Cat" },
+                  { "name": "Ankha",   "image_url": "https://dodo.ac/np/images/ankha.png",   "species": "Cat" }
+                ]
+              }
+            }
+          }
+        }
       }
     }
+
   },
   "components": {
     "schemas": {
+      "Me": {
+        "type": "object",
+        "properties": {
+          "id_user":          { "type": "integer" },
+          "pseudo":           { "type": "string" },
+          "email":            { "type": "string" },
+          "role":             { "type": "string", "enum": ["user", "admin"] },
+          "villageois_nom":   { "type": "string" },
+          "villageois_photo": { "type": "string" }
+        }
+      },
+      "UserAdmin": {
+        "type": "object",
+        "properties": {
+          "id_user":        { "type": "integer" },
+          "pseudo":         { "type": "string" },
+          "email":          { "type": "string" },
+          "role":           { "type": "string" },
+          "villageois_nom": { "type": "string" }
+        }
+      },
+      "AnnonceResume": {
+        "type": "object",
+        "properties": {
+          "id_annonce":      { "type": "integer" },
+          "titre":           { "type": "string" },
+          "tache":           { "type": "string" },
+          "date_creation":   { "type": "string", "format": "date-time" },
+          "pseudo":          { "type": "string" },
+          "villageois_photo":{ "type": "string" },
+          "urgence_count":   { "type": "integer" },
+          "coeur_count":     { "type": "integer" },
+          "rire_count":      { "type": "integer" }
+        }
+      },
       "Villageois": {
         "type": "object",
         "properties": {
-          "name":      { "type": "string", "example": "Raymond" },
-          "image_url": { "type": "string", "example": "https://dodo.ac/np/images/raymond.png" },
-          "species":   { "type": "string", "example": "Cat" }
+          "name":      { "type": "string" },
+          "image_url": { "type": "string" },
+          "species":   { "type": "string" }
         }
       }
     }

@@ -34,27 +34,26 @@
             <h1>je suis disponible</h1>
           </div>
 
-          {% if erreur %}
-          <p class="erreur">{{ erreur }}</p>
-          {% endif %}
+          <p class="erreur" id="erreur" style="display:none"></p>
 
-          <form class="nook-form" method="POST" action="/dispos/nouvelle">
+          <form class="nook-form" onsubmit="posterDispo(event)">
             <div>
               <label>date *</label>
-              <input type="date" name="date_dispo" min="{{ today }}" required />
+              <input type="date" id="date_dispo" required />
             </div>
             <div>
               <label>créneau *</label>
-              <select name="creneau" required>
+              <select id="creneau" required>
                 <option value="" disabled selected>choisir...</option>
-                {% for c in creneaux %}
-                <option value="{{ c }}">{{ c }}</option>
-                {% endfor %}
+                <option value="matin">matin</option>
+                <option value="après-midi">après-midi</option>
+                <option value="soir">soir</option>
+                <option value="journée entière">journée entière</option>
               </select>
             </div>
             <div>
               <label>pour quoi ? (optionnel)</label>
-              <textarea name="description" rows="3" placeholder="ex: je peux aider pour du jardinage ou des courses..."></textarea>
+              <textarea id="description" rows="3" placeholder="ex: je peux aider pour du jardinage ou des courses..."></textarea>
             </div>
             <button class="nook-btn" type="submit">partager ma dispo</button>
           </form>
@@ -63,5 +62,29 @@
       </div>
 
     </div>
+    <script>
+      document.getElementById('date_dispo').min = new Date().toISOString().slice(0, 10);
+
+      async function posterDispo(event) {
+        event.preventDefault();
+        const errEl = document.getElementById('erreur');
+        const res = await fetch('/api/dispos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date_dispo:  document.getElementById('date_dispo').value,
+            creneau:     document.getElementById('creneau').value,
+            description: document.getElementById('description').value.trim(),
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = '/dispos';
+        } else {
+          errEl.textContent   = data.error;
+          errEl.style.display = 'block';
+        }
+      }
+    </script>
   </body>
 </html>

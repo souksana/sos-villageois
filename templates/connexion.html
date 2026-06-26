@@ -33,18 +33,16 @@
             <h1>se connecter</h1>
           </div>
 
-          {% if erreur %}
-          <p class="erreur">{{ erreur }}</p>
-          {% endif %}
+          <p class="erreur" id="erreur" style="display:none"></p>
 
-          <form class="nook-form" method="POST" action="/connexion">
+          <form class="nook-form" onsubmit="seConnecter(event)">
             <div>
               <label>email</label>
-              <input type="email" name="email" required />
+              <input type="email" id="email" required />
             </div>
             <div>
               <label>mot de passe</label>
-              <input type="password" name="mot_de_passe" required />
+              <input type="password" id="mdp" required />
             </div>
             <button class="nook-btn" type="submit">entrer dans le village</button>
           </form>
@@ -54,5 +52,26 @@
       </div>
 
     </div>
+    <script>
+      async function seConnecter(event) {
+        event.preventDefault();
+        const errEl = document.getElementById('erreur');
+        const res = await fetch('/api/connexion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email:        document.getElementById('email').value,
+            mot_de_passe: document.getElementById('mdp').value
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = '/';
+        } else {
+          errEl.textContent  = data.error;
+          errEl.style.display = 'block';
+        }
+      }
+    </script>
   </body>
 </html>

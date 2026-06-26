@@ -26,55 +26,84 @@
         <a href="/annonces/nouvelle">+</a>
       </div>
 
-      <div class="filtre-bar">
-        <a href="/annonces?tri=recent" class="filtre-pill {% if tri == 'recent' %}active{% endif %}">récent</a>
-        <a href="/annonces?tri=ancien" class="filtre-pill {% if tri == 'ancien' %}active{% endif %}">ancien</a>
-        <a href="/annonces?tri=urgence" class="filtre-pill urgence {% if tri == 'urgence' %}active{% endif %}">! urgence</a>
+      <div class="filtre-bar" id="filtres">
+        <a href="#" class="filtre-pill active" data-tri="recent" onclick="changerTri(event,'recent')">récent</a>
+        <a href="#" class="filtre-pill" data-tri="ancien" onclick="changerTri(event,'ancien')">ancien</a>
+        <a href="#" class="filtre-pill urgence" data-tri="urgence" onclick="changerTri(event,'urgence')">! urgence</a>
       </div>
 
-      <div class="nook-content padded">
-        {% if annonces %}
-          {% for a in annonces %}
-          <a class="annonce-card nook-card" href="/annonces/{{ a.id_annonce }}">
-            <div class="annonce-top">
-              <img
-                class="mini-avatar"
-                src="{{ a.villageois_photo or '/static/img/logo.png' }}"
-                alt="{{ a.pseudo }}"
-                onerror="this.src='/static/img/logo.png'"
-              />
-              <div class="annonce-meta">
-                <span class="annonce-pseudo">{{ a.pseudo }}</span>
-                <span class="tache-badge" data-tache="{{ a.tache }}">{{ a.tache }}</span>
-              </div>
-              <div class="annonce-top-right">
-                {% if a.urgence_count > 0 %}
-                <span class="urgence-badge">! {{ a.urgence_count }}</span>
-                {% endif %}
-                <span class="annonce-date">{{ a.date_creation.strftime('%d/%m') }}</span>
-              </div>
-            </div>
-            <p class="annonce-titre">{{ a.titre }}</p>
-            {% if a.description %}
-            <p class="annonce-desc">{{ a.description[:100] }}{% if a.description|length > 100 %}…{% endif %}</p>
-            {% endif %}
-            {% if a.urgence_count > 0 or a.coeur_count > 0 or a.rire_count > 0 %}
-            <div class="card-reactions">
-              {% if a.urgence_count > 0 %}<span class="card-reac urgence">‼️ {{ a.urgence_count }}</span>{% endif %}
-              {% if a.coeur_count > 0 %}<span class="card-reac">💚 {{ a.coeur_count }}</span>{% endif %}
-              {% if a.rire_count > 0 %}<span class="card-reac">😹 {{ a.rire_count }}</span>{% endif %}
-            </div>
-            {% endif %}
-          </a>
-          {% endfor %}
-        {% else %}
-          <div class="nook-card" style="text-align:center; padding:40px 20px;">
-            <p style="color:#aaa; font-size:0.9em;">pas encore d'annonces dans le village</p>
-            <a class="nook-btn" href="/annonces/nouvelle" style="margin-top:16px; display:block;">poster la première</a>
-          </div>
-        {% endif %}
-      </div>
+      <div class="nook-content padded" id="liste"></div>
 
     </div>
+    <script>
+      function fmtDateShort(iso) {
+        return iso ? iso.slice(8,10)+'/'+iso.slice(5,7) : '';
+      }
+
+      function renderAnnonces(annonces) {
+        const liste = document.getElementById('liste');
+        if (!annonces.length) {
+          liste.innerHTML = `
+            <div class="nook-card" style="text-align:center; padding:40px 20px;">
+              <p style="color:#aaa; font-size:0.9em;">pas encore d'annonces dans le village</p>
+              <a class="nook-btn" href="/annonces/nouvelle" style="margin-top:16px; display:block;">poster la première</a>
+            </div>`;
+          return;
+        }
+        liste.innerHTML = annonces.map(a => {
+          const urgenceBadge = a.urgence_count > 0
+            ? `<span class="urgence-badge">! ${a.urgence_count}</span>` : '';
+          const reactions = (a.urgence_count > 0 || a.coeur_count > 0 || a.rire_count > 0) ? `
+            <div class="card-reactions">
+              ${a.urgence_count > 0 ? `<span class="card-reac urgence">‼️ ${a.urgence_count}</span>` : ''}
+              ${a.coeur_count   > 0 ? `<span class="card-reac">💚 ${a.coeur_count}</span>` : ''}
+              ${a.rire_count    > 0 ? `<span class="card-reac">😹 ${a.rire_count}</span>` : ''}
+            </div>` : '';
+          const desc = a.description
+            ? `<p class="annonce-desc">${a.description.slice(0,100)}${a.description.length > 100 ? '…' : ''}</p>` : '';
+          const photo = a.villageois_photo || '/static/img/logo.png';
+          return `
+            <a class="annonce-card nook-card" href="/annonces/${a.id_annonce}">
+              <div class="annonce-top">
+                <img class="mini-avatar" src="${photo}" alt="${a.pseudo}" onerror="this.src='/static/img/logo.png'" />
+                <div class="annonce-meta">
+                  <span class="annonce-pseudo">${a.pseudo}</span>
+                  <span class="tache-badge" data-tache="${a.tache}">${a.tache}</span>
+                </div>
+                <div class="annonce-top-right">
+                  ${urgenceBadge}
+                  <span class="annonce-date">${fmtDateShort(a.date_creation)}</span>
+                </div>
+              </div>
+              <p class="annonce-titre">${a.titre}</p>
+              ${desc}
+              ${reactions}
+            </a>`;
+        }).join('');
+      }
+
+      let triActuel = new URLSearchParams(location.search).get('tri') || 'recent';
+
+      function changerTri(event, tri) {
+        event.preventDefault();
+        triActuel = tri;
+        document.querySelectorAll('.filtre-pill').forEach(p => p.classList.remove('active'));
+        event.target.classList.add('active');
+        charger();
+      }
+
+      function charger() {
+        fetch(`/api/annonces?tri=${triActuel}`)
+          .then(r => r.json())
+          .then(renderAnnonces);
+      }
+
+      // activer le bon filtre pill au chargement
+      document.querySelectorAll('.filtre-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.tri === triActuel);
+      });
+
+      charger();
+    </script>
   </body>
 </html>

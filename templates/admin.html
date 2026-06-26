@@ -26,33 +26,46 @@
         <span></span>
       </div>
 
-      <div class="nook-content padded">
-        <div class="nook-card">
-
-          <p class="step-title">{{ users|length }} utilisateur(s)</p>
-
-          <div class="admin-user-list">
-            {% for u in users %}
-            <div class="admin-user-row">
-              <div class="admin-user-info">
-                <span class="admin-pseudo">{{ u.pseudo }}</span>
-                {% if u.role == "admin" %}
-                <span class="admin-badge">admin</span>
-                {% endif %}
-                <span class="admin-email">{{ u.email }}</span>
-              </div>
-              {% if u.role != "admin" %}
-              <form method="POST" action="/admin/supprimer/{{ u.id_user }}" onsubmit="return confirm('Supprimer {{ u.pseudo }} ?')">
-                <button class="admin-delete-btn" type="submit">&#10005;</button>
-              </form>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-
-        </div>
+      <div class="nook-content padded" id="contenu">
+        <p style="text-align:center; color:#aaa; padding:40px;">chargement…</p>
       </div>
 
     </div>
+    <script>
+      async function charger() {
+        const res = await fetch('/api/users');
+        if (!res.ok) { window.location.href = '/'; return; }
+        const users = await res.json();
+        render(users);
+      }
+
+      function render(users) {
+        const rows = users.map(u => `
+          <div class="admin-user-row">
+            <div class="admin-user-info">
+              <span class="admin-pseudo">${u.pseudo}</span>
+              ${u.role === 'admin' ? '<span class="admin-badge">admin</span>' : ''}
+              <span class="admin-email">${u.email}</span>
+            </div>
+            ${u.role !== 'admin'
+              ? `<button class="admin-delete-btn" onclick="supprimerUser(${u.id_user}, '${u.pseudo}')">&#10005;</button>`
+              : ''}
+          </div>`).join('');
+
+        document.getElementById('contenu').innerHTML = `
+          <div class="nook-card">
+            <p class="step-title">${users.length} utilisateur(s)</p>
+            <div class="admin-user-list">${rows}</div>
+          </div>`;
+      }
+
+      async function supprimerUser(id, pseudo) {
+        if (!confirm(`Supprimer ${pseudo} ?`)) return;
+        const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+        if (res.ok) charger();
+      }
+
+      charger();
+    </script>
   </body>
 </html>
